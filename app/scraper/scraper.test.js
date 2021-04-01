@@ -21,6 +21,14 @@ const htmlString = `
 `;
 const htmlStateString = `
 <div id="orb-modules">
+  <script type="text/javascript">
+    (function () {
+      var el = document.getElementById('main');
+      if (el.className.indexOf('hasJs') === -1) {
+        el.className += el.className ? ' hasJs' : 'hasJs';
+      }
+    })();
+  </script>
 <script> window.__PRELOADED_STATE__ = {"tests": "super cool"}; </script>
 <script src="https://rmp.files.bbci.co.uk/playspace/js/sounds.something.js" defer="defer"></script>
 </div>
