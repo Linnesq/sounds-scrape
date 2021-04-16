@@ -29,7 +29,7 @@ const extractEpisodeMetadata = async (urls) => {
     const htmlText = await raw.text();
     const doc = new dom().parseFromString(htmlText);
     const rawText = xpath.select(
-      'string(//div[@id="orb-modules"]//script[2])',
+      'string(//script//text()[contains(., "window.__PRELOADED_STATE__")])',
       doc
     );
     const t = rawText.trim().replace("window.__PRELOADED_STATE__ = ", "");
