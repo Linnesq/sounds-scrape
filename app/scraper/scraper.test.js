@@ -66,9 +66,9 @@ describe("extractTracklistInfo", () => {
     const showMap = { "fake-url": mockData };
     const actual = extractTracklistInfo(showMap);
 
-    expect(Object.keys(actual)[0]).toEqual('m000s9h5');
+    expect(Object.keys(actual)[0]).toEqual("m000s9h5");
 
-    expect(actual.m000s9h5.info.showNameDate).toEqual('Benji B 2021-02-18');
+    expect(actual.m000s9h5.info.showNameDate).toEqual("Benji B 2021-02-18");
     expect(actual.m000s9h5.info.description).toEqual(
       "slowthai joins Benji for the full 2 hours."
     );

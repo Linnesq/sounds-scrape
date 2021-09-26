@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "tasks": "rm *.log; node app/index.js"
+    "tasks": "rm *.log; node app/index.js",
+    "lint:check": "prettier --check app/**/*.js",
+    "lint:fix": "prettier --write app/**/*.js"
   },
   "author": "",
   "license": "ISC",

@@ -1,7 +1,7 @@
 const SpotifyWebApi = require("spotify-web-api-node");
 const fs = require("fs");
 const authFile = "auth.json";
-const { report } = require('../utils/logger');
+const { report } = require("../utils/logger");
 
 /**
  * Read config from json file
@@ -57,7 +57,12 @@ const init = async () => {
  */
 
 const printAuthorizeUrl = () => {
-  const scopes = ["playlist-modify-private", "playlist-read-private", "user-library-read", "user-library-modify"];
+  const scopes = [
+    "playlist-modify-private",
+    "playlist-read-private",
+    "user-library-read",
+    "user-library-modify",
+  ];
   const state = "should-appear-on-callback-url";
   console.log(webApi.createAuthorizeURL(scopes, state));
 };
