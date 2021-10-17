@@ -6,14 +6,7 @@ const { report } = require("../utils/logger");
 /**
  * Read config from json file
  */
-const getAuthConfig = () => {
-  try {
-    JSON.parse(fs.readFileSync(authFile));
-  } catch {
-    // required for tests/CI
-    report("Could not find authFile...");
-  }
-};
+const getAuthConfig = () => JSON.parse(fs.readFileSync(authFile));
 
 /**
  * Write config to json file
@@ -22,9 +15,9 @@ const saveAuthConfig = (config) =>
   fs.writeFileSync(authFile, JSON.stringify(config, null, 4));
 
 /**
- * Web API client for duration of application
+ * Web API client
  */
-const webApi = new SpotifyWebApi(getAuthConfig());
+const webApi = () => new SpotifyWebApi(getAuthConfig());
 
 /**
  * Basic init - will either get a resource or refresh tokens
@@ -34,10 +27,12 @@ const webApi = new SpotifyWebApi(getAuthConfig());
 const init = async () => {
   let errorObj;
 
+  const api = webApi();
+
   // make an api call to see if tokens are out of date
-  await webApi
+  await api
     .getMe()
-    .then((data) => console.log("init success"))
+    .then((data) => report("init success"))
     .catch((err) => {
       report(`Initialising client failed, ${err}`);
       // TODO check status code in err
@@ -45,11 +40,11 @@ const init = async () => {
     });
 
   if (errorObj) {
-    await webApi
+    await api
       .refreshAccessToken()
       .then((data) => {
-        webApi.setAccessToken(data.body.access_token);
-        saveAuthConfig(webApi.getCredentials());
+        api.setAccessToken(data.body.access_token);
+        saveAuthConfig(api.getCredentials());
       })
       .catch((err) => report(`error when refreshing token, ${err})`))
       .finally(() => report("refreshed token, init complete 🍻"));
@@ -70,22 +65,23 @@ const printAuthorizeUrl = () => {
     "user-library-modify",
   ];
   const state = "should-appear-on-callback-url";
-  console.log(webApi.createAuthorizeURL(scopes, state));
+  console.log(webApi().createAuthorizeURL(scopes, state));
 };
 
 /**
  * Given a code from above, put it in here
  */
-const initialiseAuthorisation = (code) => {
-  // TODO - defo needs tested for real
-  webApi.authorizationCodeGrant(code).then(
-    (data) => {
-      webApi.setAccessToken(data.body["access_token"]);
-      webApi.setRefreshToken(data.body["refresh_token"]);
-      saveAuthConfig(webApi.getCredentials());
-    },
-    (err) => console.error(err)
-  );
+const initialiseAuthorisation = async (code) => {
+  const api = webApi();
+  await api
+    .authorizationCodeGrant(code)
+    .then((data) => {
+      api.setAccessToken(data.body["access_token"]);
+      api.setRefreshToken(data.body["refresh_token"]);
+      saveAuthConfig(api.getCredentials());
+      report("Auth Success");
+    })
+    .catch((err) => report(err));
 };
 
 module.exports = {

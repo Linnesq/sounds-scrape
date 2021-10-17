@@ -2,6 +2,8 @@ const { createSpotifyPlaylists } = require("./tasks");
 
 const auth = require("../spotify/auth");
 jest.mock("../spotify/auth");
+const mockApi = require("spotify-web-api-node");
+jest.mock("spotify-web-api-node");
 
 const { getTracklists } = require("../scraper/scraper");
 jest.mock("../scraper/scraper");
@@ -29,25 +31,28 @@ describe("createSpotifyPlaylists", () => {
   it("creates playlist when no pre-existing playlist found", async () => {
     getTracklists.mockResolvedValue(mockTracklisting);
 
-    auth.webApi.getUserPlaylists = jest
+    auth.webApi.mockReturnValue(mockApi);
+
+    mockApi.getUserPlaylists = jest
       .fn()
       .mockResolvedValue({ body: { items: [{ name: "My Playlist 1" }] } });
 
-    auth.webApi.createPlaylist = jest
+    mockApi.createPlaylist = jest
       .fn()
       .mockResolvedValue({ body: { id: "an ID" } });
 
-    auth.webApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
+    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
 
     // Act
-    actual = await createSpotifyPlaylists();
+    await createSpotifyPlaylists();
+
     // Expectations
     expect(auth.init).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.getUserPlaylists).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.createPlaylist.mock.calls[0][0]).toEqual("mockShowName");
-    expect(auth.webApi.createPlaylist).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.addTracksToPlaylist).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.addTracksToPlaylist.mock.calls[0]).toEqual([
+    expect(mockApi.getUserPlaylists).toHaveBeenCalledTimes(1);
+    expect(mockApi.createPlaylist.mock.calls[0][0]).toEqual("mockShowName");
+    expect(mockApi.createPlaylist).toHaveBeenCalledTimes(1);
+    expect(mockApi.addTracksToPlaylist).toHaveBeenCalledTimes(1);
+    expect(mockApi.addTracksToPlaylist.mock.calls[0]).toEqual([
       "an ID",
       ["spotify:track:7uafPT7Gvs4rVCHRfym5sI"],
     ]);
@@ -56,20 +61,24 @@ describe("createSpotifyPlaylists", () => {
   it("will not create playlist when pre-existing playlist found", async () => {
     getTracklists.mockResolvedValue(mockTracklisting);
 
-    auth.webApi.getUserPlaylists = jest
-      .fn()
-      .mockResolvedValue({ body: { items: [{ name: "mockShowName" }] } });
+    auth.webApi.mockReturnValue(mockApi);
 
-    auth.webApi.createPlaylist = jest.fn();
+    const mockGetPlaylists = jest.fn();
+    mockGetPlaylists.mockResolvedValue({
+      body: { items: [{ name: "mockShowName" }] },
+    });
+    mockApi.getUserPlaylists = mockGetPlaylists;
 
-    auth.webApi.addTracksToPlaylist = jest.fn();
+    mockApi.createPlaylist = jest.fn();
+
+    mockApi.addTracksToPlaylist = jest.fn();
 
     // Act
-    actual = await createSpotifyPlaylists();
+    await createSpotifyPlaylists();
     // Expectations
     expect(auth.init).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.getUserPlaylists).toHaveBeenCalledTimes(1);
-    expect(auth.webApi.createPlaylist).not.toHaveBeenCalled();
-    expect(auth.webApi.addTracksToPlaylist).not.toHaveBeenCalled();
+    expect(mockApi.getUserPlaylists).toHaveBeenCalledTimes(1);
+    expect(mockApi.createPlaylist).not.toHaveBeenCalled();
+    expect(mockApi.addTracksToPlaylist).not.toHaveBeenCalled();
   });
 });

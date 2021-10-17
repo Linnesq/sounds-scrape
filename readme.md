@@ -20,7 +20,7 @@ make an `auth.json` file in the project root, e.g.
 {
     "clientId": "from-your-spotify-app",
     "clientSecret": "from-your-spotify-app",
-    "redirectUri": "https://localhost/callback",
+    "redirectUri": "https://localhost/callback"
 }
 ```
 
@@ -41,7 +41,7 @@ docker run -t benji npx run-func ./app/spotify/auth.js printAuthorizeUrl
 copy the URL output in terminal and open in your browser. It will redirect you to a non-existant page on localhost (or whatever you configure as your callback URL) - that doesn't matter. Extract the `code` from the URL in the address bar. Then, no longer than a few minutes after your command above, run:
 
 ```
-docker run -t benji npx run-func ./app/spotify/auth.js initialiseAuthorisation <code-from-last-command>
+docker run -v $(pwd):/app -t benji npx run-func ./app/spotify/auth.js initialiseAuthorisation <code-from-last-command>
 ```
 
 You should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate.

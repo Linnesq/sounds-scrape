@@ -10,7 +10,7 @@ const createSpotifyPlaylists = async () => {
   await init();
 
   let existingPlaylists;
-  await webApi
+  await webApi()
     .getUserPlaylists({ limit: 50 })
     .then((data) => (existingPlaylists = data.body.items.map((x) => x.name)))
     .catch((err) => console.error(err))
@@ -30,14 +30,14 @@ const createSpotifyPlaylists = async () => {
 
     report(`Creating playlist for ${showNameDate}`);
 
-    await webApi
+    await webApi()
       .createPlaylist(showNameDate, {
         description: show.info.description,
         collaborative: false,
         public: false,
       })
       .then((data) =>
-        webApi.addTracksToPlaylist(data.body.id, show.info.spotifyUris)
+        webApi().addTracksToPlaylist(data.body.id, show.info.spotifyUris)
       )
       .then((data) =>
         report(`Tracks successfully added to playlist ${showNameDate}`)
