@@ -6,7 +6,14 @@ const { report } = require("../utils/logger");
 /**
  * Read config from json file
  */
-const getAuthConfig = () => JSON.parse(fs.readFileSync(authFile));
+const getAuthConfig = () => {
+  try {
+    JSON.parse(fs.readFileSync(authFile));
+  } catch {
+    // required for tests/CI
+    report("Could not find authFile...");
+  }
+};
 
 /**
  * Write config to json file
@@ -17,7 +24,6 @@ const saveAuthConfig = (config) =>
 /**
  * Web API client for duration of application
  */
-
 const webApi = new SpotifyWebApi(getAuthConfig());
 
 /**
