@@ -1,11 +1,19 @@
 const SpotifyWebApi = require("spotify-web-api-node");
 const fs = require("fs");
 const authFile = "auth.json";
+const { report } = require("../utils/logger");
 
 /**
  * Read config from json file
  */
-const getAuthConfig = () => JSON.parse(fs.readFileSync(authFile));
+const getAuthConfig = () => {
+  try {
+    JSON.parse(fs.readFileSync(authFile));
+  } catch {
+    // required for tests/CI
+    report("Could not find authFile...");
+  }
+};
 
 /**
  * Write config to json file
@@ -16,7 +24,6 @@ const saveAuthConfig = (config) =>
 /**
  * Web API client for duration of application
  */
-
 const webApi = new SpotifyWebApi(getAuthConfig());
 
 /**
@@ -32,7 +39,7 @@ const init = async () => {
     .getMe()
     .then((data) => console.log("init success"))
     .catch((err) => {
-      console.error("init failed", err);
+      report(`Initialising client failed, ${err}`);
       // TODO check status code in err
       errorObj = err;
     });
@@ -44,8 +51,8 @@ const init = async () => {
         webApi.setAccessToken(data.body.access_token);
         saveAuthConfig(webApi.getCredentials());
       })
-      .catch((err) => console.error("error when refreshing token!", err))
-      .finally(() => console.log("refreshed token, init complete 🍻"));
+      .catch((err) => report(`error when refreshing token, ${err})`))
+      .finally(() => report("refreshed token, init complete 🍻"));
   }
 };
 
@@ -56,7 +63,12 @@ const init = async () => {
  */
 
 const printAuthorizeUrl = () => {
-  const scopes = ["playlist-modify-private", "playlist-read-private"];
+  const scopes = [
+    "playlist-modify-private",
+    "playlist-read-private",
+    "user-library-read",
+    "user-library-modify",
+  ];
   const state = "should-appear-on-callback-url";
   console.log(webApi.createAuthorizeURL(scopes, state));
 };
