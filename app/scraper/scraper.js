@@ -80,7 +80,7 @@ const extractTracklistInfo = (showMetadataMap) => {
 Put it all together to produce a tracklist
 */
 const getTracklists = async () => {
-  const testing = true;
+  const testing = false; // TODO improve this
   report(`starting the scrape, is testing? ${testing}`);
   let showTracklists;
 

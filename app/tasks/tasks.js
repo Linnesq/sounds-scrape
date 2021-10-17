@@ -43,9 +43,7 @@ const createSpotifyPlaylists = async () => {
         report(`Tracks successfully added to playlist ${showNameDate}`)
       )
       .catch((err) => report(`Error encoutered ${err}`))
-      .finally(() =>
-        console.log(`Finished attempting to create ${showNameDate}`)
-      );
+      .finally(() => report(`Finished attempting to create ${showNameDate}`));
   }
 };
 
