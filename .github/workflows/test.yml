@@ -22,4 +22,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - run: npm run lint:check
-      - run: npm test
+      - name: Tests & Coverage
+        run: npm run coverage

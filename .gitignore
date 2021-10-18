@@ -1,3 +1,7 @@
 node_modules
-*.json
+latest.json
+auth*.json
+saved*
 *.log
+
+coverage
