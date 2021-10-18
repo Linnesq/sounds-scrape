@@ -85,7 +85,6 @@ describe("scraper", () => {
   });
 
   describe("getTracklists()", () => {
-
     test("produces an object of show data", async () => {
       getShowsConfig.mockReturnValue(["link1", "link2"]);
       fetch.mockResolvedValueOnce({ text: async () => htmlString });
