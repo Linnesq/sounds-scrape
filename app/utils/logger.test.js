@@ -7,7 +7,7 @@ const { report } = require("./logger");
 describe("logger", () => {
   describe("report", () => {
     it("logs to a file", () => {
-      const spy = jest.spyOn(console, 'log');
+      const spy = jest.spyOn(console, "log");
 
       report("something");
 
@@ -16,7 +16,7 @@ describe("logger", () => {
         expect.anything(),
         expect.stringContaining("something")
       );
-      expect(spy).toHaveBeenCalledWith(expect.stringContaining("something"))
+      expect(spy).toHaveBeenCalledWith(expect.stringContaining("something"));
     });
   });
 });
