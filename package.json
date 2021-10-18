@@ -4,7 +4,7 @@
   "description": "Scraping BBC website for tracklist info",
   "main": "index.js",
   "scripts": {
-    "coverage": "jest --coverage",
+    "coverage": "jest --coverage --silent",
     "test": "jest",
     "tasks": "rm *.log; node app/index.js",
     "lint:check": "prettier --check app/**/*.js",
