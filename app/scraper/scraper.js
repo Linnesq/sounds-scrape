@@ -4,17 +4,20 @@ const dom = require("xmldom").DOMParser;
 const fs = require("fs");
 const { report } = require("../utils/logger");
 
-const config = JSON.parse(fs.readFileSync("config"));
+const { getShowsConfig } = require("../config/config");
 
-const extractEpisodeUrls = async () => {
-  const raw = await fetch(config.episodesPageUrl);
+const extractEpisodeUrls = async (showMainUrl) => {
+  const raw = await fetch(showMainUrl);
   const html = await raw.text();
   const doc = new dom().parseFromString(html);
   const query = '//h2[@class="programme__titles"]/a/@href';
 
   const nodes = xpath.select(query, doc);
 
-  return nodes.map((node) => node.value.replace("programmes", "sounds/play"));
+  const urls = nodes.map((node) =>
+    node.value.replace("programmes", "sounds/play")
+  );
+  return urls;
 };
 
 /*
@@ -80,18 +83,19 @@ const extractTracklistInfo = (showMetadataMap) => {
 Put it all together to produce a tracklist
 */
 const getTracklists = async () => {
-  const testing = false; // TODO improve this
-  report(`starting the scrape, is testing? ${testing}`);
   let showTracklists;
+  let showUrls = [];
 
-  if (testing) {
-    showTracklists = JSON.parse(fs.readFileSync("latest.json"));
-  } else {
-    const showUrls = await extractEpisodeUrls();
-    const showMetadata = await extractEpisodeMetadata(showUrls);
-    showTracklists = extractTracklistInfo(showMetadata);
-    fs.writeFileSync("latest.json", JSON.stringify(showTracklists, null, 4));
+  for (const config of getShowsConfig()) {
+    await extractEpisodeUrls(config).then((urls) => {
+      showUrls.push(...urls);
+    });
   }
+
+  const showMetadata = await extractEpisodeMetadata(showUrls);
+  showTracklists = extractTracklistInfo(showMetadata);
+  fs.writeFileSync("latest.json", JSON.stringify(showTracklists, null, 4));
+
   return showTracklists;
 };
 

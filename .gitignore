@@ -1,6 +1,7 @@
 node_modules
 latest.json
-auth.json
+auth*.json
+saved*
 *.log
 
 coverage
