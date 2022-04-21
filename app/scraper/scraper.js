@@ -31,7 +31,11 @@ const extractEpisodeMetadata = async (urls) => {
   for (const url of urls) {
     const raw = await fetch(url);
     const htmlText = await raw.text();
-    const doc = new dom().parseFromString(htmlText);
+    const target = htmlText
+      .split("\n")
+      .filter((line) => line.indexOf("window.__PRELOADED_STATE__") > 0)[0];
+
+    const doc = new dom().parseFromString(target);
     const rawText = xpath.select(
       'string(//script//text()[contains(., "window.__PRELOADED_STATE__")])',
       doc
