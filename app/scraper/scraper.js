@@ -35,14 +35,10 @@ const extractEpisodeMetadata = async (urls) => {
       .split("\n")
       .filter((line) => line.indexOf("window.__PRELOADED_STATE__") > 0)[0];
 
-    const doc = new dom().parseFromString(target);
-    const rawText = xpath.select(
-      'string(//script//text()[contains(., "window.__PRELOADED_STATE__")])',
-      doc
-    );
-    const t = rawText.trim().replace("window.__PRELOADED_STATE__ = ", "");
-    const clean = t.substring(0, t.length - 1); //remove final ;
-    const parsed = JSON.parse(clean);
+    const startCut = target.indexOf("{");
+    const endCut = target.lastIndexOf("}") + 1;
+    const jsonString = target.substring(startCut, endCut);
+    const parsed = JSON.parse(jsonString);
     results[url] = parsed;
   }
 
