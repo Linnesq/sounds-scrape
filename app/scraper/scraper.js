@@ -3,6 +3,7 @@ const fs = require("fs");
 const { report } = require("../utils/logger");
 
 const { getShowsConfig } = require("../config/config");
+const { url } = require("inspector");
 
 const extractEpisodeUrls = async (showMainUrl) => {
   const raw = await fetch(showMainUrl);
@@ -28,6 +29,11 @@ const extractEpisodeMetadata = async (urls) => {
     const target = htmlText
       .split("\n")
       .filter((line) => line.indexOf("window.__PRELOADED_STATE__") > 0)[0];
+
+    if (!target) {
+      report(`No show data for ${url}`);
+      continue;
+    }
 
     const startCut = target.indexOf("{");
     const endCut = target.lastIndexOf("}") + 1;
@@ -82,7 +88,8 @@ const getTracklists = async () => {
 
   for (const config of getShowsConfig()) {
     await extractEpisodeUrls(config).then((urls) => {
-      showUrls.push(...urls);
+      uniq = Array.from(new Set(urls));
+      showUrls.push(...uniq);
     });
   }
 
