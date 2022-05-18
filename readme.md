@@ -32,7 +32,7 @@ Build the image:
 docker build -t benji .
 ```
 
-and then run the following command
+and then run the following command:
 
 ```
 docker run -t benji npx run-func ./app/spotify/auth.js printAuthorizeUrl
@@ -44,15 +44,16 @@ copy the URL output in terminal and open in your browser. It will redirect you t
 docker run -v $(pwd):/app -t benji npx run-func ./app/spotify/auth.js initialiseAuthorisation <code-from-last-command>
 ```
 
-You should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate.
-Check everything is working OK by running
+**Note**: in these commands you'll see `-v $(pwd):/app` which mounts the current folder to the docker container. When the app is running in docker, and it alters the `auth.json` file, having the mount means the changes to the files are reflected on your file system (rather than just changing only in the docker container).
+
+You should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate. Check everything is working OK by running:
 
 ```
-npx run-func ./app/spotify/auth.js init
+docker run -v $(pwd):/app -t benji npx run-func ./app/spotify/auth.js init
 ```
 
 To run the application and create playlists for real, run:
 
 ```
-docker run -t benji npm run tasks
+docker run -v $(pwd):/app -t benji npm run tasks
 ```

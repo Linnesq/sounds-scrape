@@ -1,22 +1,17 @@
 const fetch = require("node-fetch");
-const xpath = require("xpath");
-const dom = require("xmldom").DOMParser;
 const fs = require("fs");
 const { report } = require("../utils/logger");
 
 const { getShowsConfig } = require("../config/config");
+const { url } = require("inspector");
 
 const extractEpisodeUrls = async (showMainUrl) => {
   const raw = await fetch(showMainUrl);
   const html = await raw.text();
-  const doc = new dom().parseFromString(html);
-  const query = '//h2[@class="programme__titles"]/a/@href';
+  const matches =
+    html.match(/(https:\/\/www\.bbc\.co\.uk\/programmes\/.\w*)/g) || [];
 
-  const nodes = xpath.select(query, doc);
-
-  const urls = nodes.map((node) =>
-    node.value.replace("programmes", "sounds/play")
-  );
+  const urls = matches.map((node) => node.replace("programmes", "sounds/play"));
   return urls;
 };
 
@@ -35,14 +30,15 @@ const extractEpisodeMetadata = async (urls) => {
       .split("\n")
       .filter((line) => line.indexOf("window.__PRELOADED_STATE__") > 0)[0];
 
-    const doc = new dom().parseFromString(target);
-    const rawText = xpath.select(
-      'string(//script//text()[contains(., "window.__PRELOADED_STATE__")])',
-      doc
-    );
-    const t = rawText.trim().replace("window.__PRELOADED_STATE__ = ", "");
-    const clean = t.substring(0, t.length - 1); //remove final ;
-    const parsed = JSON.parse(clean);
+    if (!target) {
+      report(`No show data for ${url}`);
+      continue;
+    }
+
+    const startCut = target.indexOf("{");
+    const endCut = target.lastIndexOf("}") + 1;
+    const jsonString = target.substring(startCut, endCut);
+    const parsed = JSON.parse(jsonString);
     results[url] = parsed;
   }
 
@@ -92,7 +88,8 @@ const getTracklists = async () => {
 
   for (const config of getShowsConfig()) {
     await extractEpisodeUrls(config).then((urls) => {
-      showUrls.push(...urls);
+      uniq = Array.from(new Set(urls));
+      showUrls.push(...uniq);
     });
   }
 
