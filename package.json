@@ -14,9 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^2.6.7",
-    "spotify-web-api-node": "^5.0.2",
-    "xmldom": "^0.6.0",
-    "xpath": "0.0.32"
+    "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
     "jest": "^27.5.1",

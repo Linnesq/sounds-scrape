@@ -1,6 +1,4 @@
 const fetch = require("node-fetch");
-const xpath = require("xpath");
-const dom = require("xmldom").DOMParser;
 const fs = require("fs");
 const { report } = require("../utils/logger");
 
@@ -9,14 +7,10 @@ const { getShowsConfig } = require("../config/config");
 const extractEpisodeUrls = async (showMainUrl) => {
   const raw = await fetch(showMainUrl);
   const html = await raw.text();
-  const doc = new dom().parseFromString(html);
-  const query = '//h2[@class="programme__titles"]/a/@href';
+  const matches =
+    html.match(/(https:\/\/www\.bbc\.co\.uk\/programmes\/.\w*)/g) || [];
 
-  const nodes = xpath.select(query, doc);
-
-  const urls = nodes.map((node) =>
-    node.value.replace("programmes", "sounds/play")
-  );
+  const urls = matches.map((node) => node.replace("programmes", "sounds/play"));
   return urls;
 };
 
