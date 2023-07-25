@@ -25,21 +25,24 @@ const createSpotifyPlaylists = async () => {
         const playlistId = playlistDataExtra[showNameDate]["playlistId"];
         let oldTracks = [];
         await webApi()
-        .getPlaylist(playlistId)
-        .then(data => oldTracks = data.body.tracks.items.map(e => {
-          return {uri: e.track.uri}
-        }))
-        .catch(err => console.error(err))
+          .getPlaylist(playlistId)
+          .then(
+            (data) =>
+              (oldTracks = data.body.tracks.items.map((e) => {
+                return { uri: e.track.uri };
+              }))
+          )
+          .catch((err) => console.error(err));
 
         await webApi()
-        .removeTracksFromPlaylist(playlistId, oldTracks)
-        .catch(err => console.error(err))
+          .removeTracksFromPlaylist(playlistId, oldTracks)
+          .catch((err) => console.error(err));
 
         await webApi()
-        .addTracksToPlaylist(playlistId, show.info.spotifyUris)
-        .catch(err => console.error(err))
+          .addTracksToPlaylist(playlistId, show.info.spotifyUris)
+          .catch((err) => console.error(err));
 
-        report(`👍🏼 ${showNameDate} updated with missing tracks`)
+        report(`👍🏼 ${showNameDate} updated with missing tracks`);
       } else {
         report(`${showNameDate} playlist already exists! Skipping...`);
       }

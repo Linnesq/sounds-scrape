@@ -9,13 +9,12 @@ const getPlaylists = async () => {
     .getUserPlaylists({ limit: 50 })
     .then((data) => {
       existingPlaylists = data.body.items.map((x) => x.name);
-      data.body.items.forEach(
-        (playlist) => {
-          playlistData[playlist.name] = playlist.tracks.total;
-          playlistDataExtra[playlist.name] = {
-            playlistId: playlist.id
-          }
-        })
+      data.body.items.forEach((playlist) => {
+        playlistData[playlist.name] = playlist.tracks.total;
+        playlistDataExtra[playlist.name] = {
+          playlistId: playlist.id,
+        };
+      });
     })
     .catch((err) => console.error(err))
     .finally(() => report("Existing playlists retrieved"));
