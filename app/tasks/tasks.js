@@ -10,7 +10,7 @@ const createSpotifyPlaylists = async () => {
   report("Initialising the web client...");
   await init();
 
-  const { playlists, playlistData } = await getPlaylists();
+  const { playlists, playlistData, playlistDataExtra } = await getPlaylists();
 
   for await (const show of Object.values(showTracklists)) {
     const { showNameDate, spotifyUris } = show.info;
@@ -22,9 +22,27 @@ const createSpotifyPlaylists = async () => {
         report(
           `⚠️ Saved playlist ${showNameDate} has ${playlistTrackCount} tracks, latest BBC data has ${actualTrackCount}`
         );
-        // todo - delete/remove/diff tracks
+        const playlistId = playlistDataExtra[showNameDate]["playlistId"];
+        let oldTracks = [];
+        await webApi()
+        .getPlaylist(playlistId)
+        .then(data => oldTracks = data.body.tracks.items.map(e => {
+          return {uri: e.track.uri}
+        }))
+        .catch(err => console.error(err))
+
+        await webApi()
+        .removeTracksFromPlaylist(playlistId, oldTracks)
+        .catch(err => console.error(err))
+
+        await webApi()
+        .addTracksToPlaylist(playlistId, show.info.spotifyUris)
+        .catch(err => console.error(err))
+
+        report(`👍🏼 ${showNameDate} updated with missing tracks`)
+      } else {
+        report(`${showNameDate} playlist already exists! Skipping...`);
       }
-      report(`${showNameDate} playlist already exists! Skipping...`);
       continue;
     }
     if (spotifyUris.length === 0) {

@@ -16,6 +16,23 @@
                 "--runInBand",
                 "--watchAll=false"
             ]
+        },
+        {
+            "type": "node",
+            "name": "debug tasks",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "npm",
+            "args": [
+                "run",
+                "tasks",
+                "--",
+                "--runInBand",
+                "--watchAll=false"
+            ]
         }
     ]
 }
