@@ -6,6 +6,7 @@
   "scripts": {
     "coverage": "jest --coverage --silent",
     "test": "jest",
+    "test:watch": "jest --watchAll",
     "tasks": "rm *.log; node app/index.js",
     "lint:check": "prettier --check app/**/*.js",
     "lint:fix": "prettier --write app/**/*.js"
