@@ -8,6 +8,10 @@ jest.mock("../config/config");
 
 const fs = require("fs");
 jest.mock("fs");
+
+const { report } = require("../utils/logger");
+jest.mock("../utils/logger");
+
 fs.writeFileSync = jest.fn().mockImplementation(() => {});
 
 const htmlString = `
@@ -66,6 +70,16 @@ describe("scraper", () => {
       );
       expect(Object.keys(actual).length).toEqual(1);
     });
+
+    test("skips when there is no show data", async () => {
+      const url = "fake";
+      fetch.mockResolvedValue({ text: async () => "" });
+
+      const actual = await scraper.extractEpisodeMetadata([url]);
+
+      expect(actual).toEqual({});
+      expect(report).toHaveBeenCalled();
+    });
   });
 
   describe("extractTracklistInfo", () => {
@@ -81,6 +95,30 @@ describe("scraper", () => {
         "slowthai joins Benji for the full 2 hours."
       );
       expect(actual.m000s9h5.info.spotifyUris.length).toEqual(25);
+    });
+  });
+
+  describe("handleDuplicateShows", () => {
+    test("handles when 2 shows have the same show name", () => {
+      const duplicatedData = {
+        info: {
+          dj: "Benji B",
+          showNameDate: "Benji B 2023-09-13",
+          description: "Some info",
+          spotifyUris: [
+            "spotify:track:3XiIO5kw2UxoY6Aph8Tcd5",
+            "spotify:track:7qRCVfjifWMt3q2MVfV8mV",
+          ],
+        },
+      };
+      const testdata = {
+        dupe1: duplicatedData,
+        dupe2: duplicatedData,
+      };
+
+      const actual = scraper.handleDuplicateShows(testdata);
+
+      expect(Object.keys(actual)).toEqual(["dupe2"]);
     });
   });
 

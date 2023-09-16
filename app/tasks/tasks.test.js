@@ -35,6 +35,7 @@ describe("createSpotifyPlaylists", () => {
     getTracklists.mockResolvedValue(mockTracklisting);
 
     auth.webApi.mockReturnValue(mockApi);
+    mockApi.getUserPlaylists = jest.fn();
 
     getPlaylists.mockReturnValue({
       existingPlaylistNames: ["My Playlist 1"],

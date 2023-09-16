@@ -10,7 +10,6 @@ const createSpotifyPlaylists = async () => {
   report("Initialising the web client...");
   await init();
 
-  // const { playlists, playlistData, playlistDataExtra } = await getPlaylists();
   const { existingPlaylistNames, playlistData } = await getPlaylists();
 
   for await (const show of Object.values(showTracklists)) {

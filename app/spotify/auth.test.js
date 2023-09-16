@@ -108,4 +108,25 @@ describe("auth.js", () => {
       );
     });
   });
+
+  describe("printAuthorizeUrl", () => {
+    it("is called with the correct scopes", () => {
+      mockFs = jest.fn().mockReturnValue("{}");
+      fs.readFileSync = mockFs;
+      const mockCreateAuthUrl = jest.fn();
+      MockApi.prototype.createAuthorizeURL = mockCreateAuthUrl;
+
+      underTest.printAuthorizeUrl();
+
+      expect(mockCreateAuthUrl).toHaveBeenCalledWith(
+        [
+          "playlist-modify-private",
+          "playlist-read-private",
+          "user-library-read",
+          "user-library-modify",
+        ],
+        "should-appear-on-callback-url"
+      );
+    });
+  });
 });
