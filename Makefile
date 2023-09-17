@@ -1,3 +1,4 @@
+STANDARD_RUN=docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape
 build:
 	docker build -t soundscrape .
 
@@ -5,13 +6,13 @@ shell: build
 	docker run -it --entrypoint /bin/sh --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape
 
 tasks: build
-	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm run tasks
+	$(STANDARD_RUN) npm run tasks
 
 tests: build
-	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm test
+	$(STANDARD_RUN) npm test
 
 tests-interactive: build
-	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm run test:watch
+	$(STANDARD_RUN) npm run test:watch
 
 coverage: build
-	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm run coverage
+	$(STANDARD_RUN) npm run coverage
