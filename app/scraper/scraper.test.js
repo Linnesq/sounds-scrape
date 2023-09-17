@@ -66,7 +66,7 @@ describe("scraper", () => {
       const actual = await scraper.extractEpisodeMetadata([url]);
 
       expect(actual[url].programmes.current.container.title).toEqual(
-        "someShow"
+        "someShow",
       );
       expect(Object.keys(actual).length).toEqual(1);
     });
@@ -92,7 +92,7 @@ describe("scraper", () => {
 
       expect(actual.m000s9h5.info.showNameDate).toEqual("Benji B 2021-02-18");
       expect(actual.m000s9h5.info.description).toEqual(
-        "slowthai joins Benji for the full 2 hours."
+        "slowthai joins Benji for the full 2 hours.",
       );
       expect(actual.m000s9h5.info.spotifyUris.length).toEqual(25);
     });
@@ -137,11 +137,11 @@ describe("scraper", () => {
       expect(fetch).toHaveBeenNthCalledWith(2, "link2");
       expect(fetch).toHaveBeenNthCalledWith(
         3,
-        "https://www.bbc.co.uk/sounds/play/testing"
+        "https://www.bbc.co.uk/sounds/play/testing",
       );
       expect(fetch).toHaveBeenNthCalledWith(
         4,
-        "https://www.bbc.co.uk/sounds/play/testing"
+        "https://www.bbc.co.uk/sounds/play/testing",
       );
       expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
 

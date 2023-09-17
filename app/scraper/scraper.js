@@ -58,7 +58,7 @@ const extractTracklistInfo = (showMetadataMap) => {
     const spotifyTrackUris = [];
     showData.tracklist.tracks.forEach((elem) => {
       const uris = elem.uris.filter(
-        (uri) => uri.id === "commercial-music-service-spotify"
+        (uri) => uri.id === "commercial-music-service-spotify",
       )[0];
       if (uris && uris.uri) {
         spotifyTrackUrls.push(uris.uri);

@@ -14,7 +14,7 @@ describe("logger", () => {
       expect(fs.appendFileSync).toHaveBeenCalledTimes(1);
       expect(fs.appendFileSync).toHaveBeenCalledWith(
         expect.anything(),
-        expect.stringContaining("something")
+        expect.stringContaining("something"),
       );
       expect(spy).toHaveBeenCalledWith(expect.stringContaining("something"));
     });
