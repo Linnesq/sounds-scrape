@@ -76,7 +76,42 @@ const extractTracklistInfo = (showMetadataMap) => {
       },
     };
   });
-  return results;
+
+  return handleDuplicateShows(results);
+};
+
+const handleDuplicateShows = (tracklistInfo) => {
+  const showsByShowName = {};
+  for (const showId in tracklistInfo) {
+    const showInfo = tracklistInfo[showId].info;
+    const showName = showInfo.showNameDate;
+    const showData = { showId, trackCount: showInfo.spotifyUris.length };
+
+    if (showsByShowName[showName]) {
+      showsByShowName[showName].push(showData);
+    } else {
+      showsByShowName[showName] = [showData];
+    }
+  }
+
+  const showsIdsToDelete = [];
+  for (const showName in showsByShowName) {
+    if (showsByShowName[showName].length > 1) {
+      showsByShowName[showName].sort((a, b) => a.trackCount - b.trackCount);
+      showsIdsToDelete.push(showsByShowName[showName][0].showId);
+    }
+    if (showsByShowName[showName].length > 2) {
+      report(`${showName} has multiple duplicates!!!`);
+      throw new Error("Can not choose which duplicate to use.");
+    }
+  }
+  if (showsIdsToDelete.length > 0) {
+    report(`Duplicates detected and handled, affecting ${showsIdsToDelete}`);
+  }
+  showsIdsToDelete.forEach((id) => {
+    delete tracklistInfo[id];
+  });
+  return tracklistInfo;
 };
 
 /*
@@ -105,4 +140,5 @@ module.exports = {
   extractEpisodeMetadata,
   extractTracklistInfo,
   getTracklists,
+  handleDuplicateShows,
 };
