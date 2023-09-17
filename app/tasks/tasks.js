@@ -21,7 +21,7 @@ const createSpotifyPlaylists = async () => {
       const playlistTrackCount = matchingPlaylist["trackCount"];
       if (actualTrackCount > playlistTrackCount) {
         report(
-          `⚠️ Saved playlist ${showNameDate} has ${playlistTrackCount} tracks, latest BBC data has ${actualTrackCount}`
+          `⚠️ Saved playlist ${showNameDate} has ${playlistTrackCount} tracks, latest BBC data has ${actualTrackCount}`,
         );
         const playlistId = matchingPlaylist["id"];
         let oldTracks = [];
@@ -31,7 +31,7 @@ const createSpotifyPlaylists = async () => {
             (data) =>
               (oldTracks = data.body.tracks.items.map((e) => {
                 return { uri: e.track.uri };
-              }))
+              })),
           )
           .catch((err) => {
             console.error(err);
@@ -65,10 +65,10 @@ const createSpotifyPlaylists = async () => {
         public: false,
       })
       .then((data) =>
-        webApi().addTracksToPlaylist(data.body.id, show.info.spotifyUris)
+        webApi().addTracksToPlaylist(data.body.id, show.info.spotifyUris),
       )
       .then((data) =>
-        report(`Tracks successfully added to playlist ${showNameDate}`)
+        report(`Tracks successfully added to playlist ${showNameDate}`),
       )
       .catch((err) => report(`Error encoutered ${err}`));
   }

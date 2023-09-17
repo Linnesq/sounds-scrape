@@ -14,12 +14,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^2.7.0",
     "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
-    "jest": "^27.5.1",
-    "prettier": "^2.6.2"
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3"
   },
   "jest": {
     "coverageThreshold": {

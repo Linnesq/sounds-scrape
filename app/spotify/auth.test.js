@@ -45,7 +45,7 @@ describe("auth.js", () => {
       expect(mockGetCredentials).toHaveBeenCalledTimes(1);
       expect(mockFs).toHaveBeenCalledWith(
         "auth.json",
-        expect.stringContaining("creds")
+        expect.stringContaining("creds"),
       );
     });
 
@@ -104,7 +104,7 @@ describe("auth.js", () => {
 
       expect(mockFs).toHaveBeenCalledWith(
         "auth.json",
-        expect.stringContaining("what")
+        expect.stringContaining("what"),
       );
     });
   });
@@ -125,7 +125,7 @@ describe("auth.js", () => {
           "user-library-read",
           "user-library-modify",
         ],
-        "should-appear-on-callback-url"
+        "should-appear-on-callback-url",
       );
     });
   });
