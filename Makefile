@@ -10,5 +10,8 @@ tasks: build
 tests: build
 	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm test
 
+tests-interactive: build
+	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm run test:watch
+
 coverage: build
 	docker run -it --rm -v $$(pwd):/app:delegated --name soundscrape-container soundscrape npm run coverage
