@@ -8,6 +8,9 @@ shell: build
 tasks: build
 	$(STANDARD_RUN) npm run tasks
 
+tasks-ghcr:
+	docker run --rm -v $$(pwd):/app:delegated ghcr.io/linnesq/sounds-scrape:latest npm run tasks
+
 tests: build
 	$(STANDARD_RUN) npm test
 
