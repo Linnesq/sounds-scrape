@@ -9,7 +9,10 @@
     "test:watch": "jest --watchAll",
     "tasks": "rm *.log; node app/index.js",
     "lint:check": "prettier --check app/**/*.js",
-    "lint:fix": "prettier --write app/**/*.js"
+    "lint:fix": "prettier --write app/**/*.js",
+    "print-auth-url": "npx run-func ./app/spotify/auth.js printAuthorizeUrl",
+    "setup-auth": "npx run-func ./app/spotify/auth.js initialiseAuthorisation $AUTH_CODE",
+    "check-auth": "npx run-func ./app/spotify/auth.js init"
   },
   "author": "",
   "license": "ISC",
