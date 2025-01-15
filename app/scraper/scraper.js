@@ -60,7 +60,7 @@ const extractTracklistInfo = (showMetadataMap) => {
       const uris = elem.uris.filter(
         (uri) => uri.id === "commercial-music-service-spotify",
       )[0];
-      if (uris && uris.uri) {
+      if (uris && uris.uri && !uris.uri.includes("album")) {
         spotifyTrackUrls.push(uris.uri);
         spotifyTrackUris.push("spotify:track:" + uris.uri.split("/").pop());
       }
