@@ -25,20 +25,22 @@ const extractEpisodeMetadata = async (urls) => {
   for (const url of urls) {
     const raw = await fetch(url);
     const htmlText = await raw.text();
-    const target = htmlText
-      .split("\n")
-      .filter((line) => line.indexOf('id="__NEXT_DATA__"') > 0)[0];
 
-    if (!target) {
+    // Use regex to extract the JSON content from inside the script tag
+    const match = htmlText.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+
+    if (!match || !match[1]) {
       report(`No show data for ${url}`);
       continue;
     }
 
-    const startCut = target.indexOf("{");
-    const endCut = target.lastIndexOf("}") + 1;
-    const jsonString = target.substring(startCut, endCut);
-    const parsed = JSON.parse(jsonString);
-    results[url] = parsed;
+    try {
+      const parsed = JSON.parse(match[1]);
+      results[url] = parsed;
+    } catch (error) {
+      report(`Failed to parse JSON for ${url}: ${error.message}`);
+      continue;
+    }
   }
 
   return results;
