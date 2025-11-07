@@ -47,7 +47,9 @@ const createSpotifyPlaylists = async () => {
 
         report(`✓ "${showNameDate}" updated with missing tracks`);
       } else {
-        report(`✓ Playlist "${showNameDate}" already exists with ${playlistTrackCount} tracks - skipping`);
+        report(
+          `✓ Playlist "${showNameDate}" already exists with ${playlistTrackCount} tracks - skipping`,
+        );
       }
       continue;
     }
@@ -56,7 +58,9 @@ const createSpotifyPlaylists = async () => {
       continue;
     }
 
-    report(`Creating playlist: "${showNameDate}" (${spotifyUris.length} tracks)`);
+    report(
+      `Creating playlist: "${showNameDate}" (${spotifyUris.length} tracks)`,
+    );
 
     await webApi()
       .createPlaylist(showNameDate, {

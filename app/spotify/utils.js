@@ -31,7 +31,9 @@ const getPlaylists = async () => {
       .catch((err) => console.error(err));
   } while (fetchedCount < total);
 
-  report(`Existing playlists retrieved: ${fetchedCount} of ${total} total playlists`);
+  report(
+    `Existing playlists retrieved: ${fetchedCount} of ${total} total playlists`,
+  );
 
   return { existingPlaylistNames, playlistData };
 };
