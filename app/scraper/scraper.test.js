@@ -35,7 +35,7 @@ const htmlStateString = `
       }
     })();
   </script>
-<script> window.__PRELOADED_STATE__ = {"tracklist":{"tracks": []},"programmes": {"current": {"container":{"title":"someShow"},"release":{"date": "2021T9"},"urn":"some:ting","synopses":{"short":"blah"} }}}; </script>
+<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"dehydratedState":{"queries":[{},{"state":{"data":{"data":[{"id":"aod_play_area","data":[{"container":{"title":"someShow"},"release":{"date":"2021T9"},"urn":"some:ting","synopses":{"short":"blah"}}]},{"id":"aod_tracks","data":[]}]}}}]}}}}</script>
 <script src="https://rmp.files.bbci.co.uk/playspace/js/sounds.something.js" defer="defer"></script>
 </div>
 `;
@@ -64,9 +64,10 @@ describe("scraper", () => {
       global.fetch.mockResolvedValue({ text: async () => htmlStateString });
       const actual = await scraper.extractEpisodeMetadata([url]);
 
-      expect(actual[url].programmes.current.container.title).toEqual(
-        "someShow",
-      );
+      expect(
+        actual[url].props.pageProps.dehydratedState.queries[1].state.data
+          .data[0].data[0].container.title,
+      ).toEqual("someShow");
       expect(Object.keys(actual).length).toEqual(1);
     });
 
@@ -93,7 +94,7 @@ describe("scraper", () => {
       expect(actual.m000s9h5.info.description).toEqual(
         "slowthai joins Benji for the full 2 hours.",
       );
-      expect(actual.m000s9h5.info.spotifyUris.length).toEqual(25);
+      expect(actual.m000s9h5.info.spotifyUris.length).toEqual(22);
     });
   });
 

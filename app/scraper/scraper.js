@@ -15,7 +15,7 @@ const extractEpisodeUrls = async (showMainUrl) => {
 };
 
 /*
-Extracts window.__PRELOADED_STATE__ metadata from bbc.co.uk/sounds/play/xyz pages
+Extracts __NEXT_DATA__ metadata from bbc.co.uk/sounds/play/xyz pages
 from an array of page urls
 */
 
@@ -25,20 +25,24 @@ const extractEpisodeMetadata = async (urls) => {
   for (const url of urls) {
     const raw = await fetch(url);
     const htmlText = await raw.text();
-    const target = htmlText
-      .split("\n")
-      .filter((line) => line.indexOf("window.__PRELOADED_STATE__") > 0)[0];
 
-    if (!target) {
+    // Use regex to extract the JSON content from inside the script tag
+    const match = htmlText.match(
+      /<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s,
+    );
+
+    if (!match || !match[1]) {
       report(`No show data for ${url}`);
       continue;
     }
 
-    const startCut = target.indexOf("{");
-    const endCut = target.lastIndexOf("}") + 1;
-    const jsonString = target.substring(startCut, endCut);
-    const parsed = JSON.parse(jsonString);
-    results[url] = parsed;
+    try {
+      const parsed = JSON.parse(match[1]);
+      results[url] = parsed;
+    } catch (error) {
+      report(`Failed to parse JSON for ${url}: ${error.message}`);
+      continue;
+    }
   }
 
   return results;
@@ -52,11 +56,45 @@ const extractEpisodeMetadata = async (urls) => {
 const extractTracklistInfo = (showMetadataMap) => {
   const results = {};
   Object.values(showMetadataMap).forEach((showData) => {
-    const showInfo = showData.programmes.current;
+    // Navigate to the queries array in the new Next.js data structure
+    const queries = showData?.props?.pageProps?.dehydratedState?.queries;
+
+    if (!queries || queries.length < 2) {
+      report("Unable to find queries data in Next.js structure");
+      return;
+    }
+
+    // Get the modules data array
+    const modules = queries[1]?.state?.data?.data;
+
+    if (!modules || modules.length < 2) {
+      report("Unable to find modules data");
+      return;
+    }
+
+    // Find the player module (aod_play_area) for show info
+    const playerModule = modules.find((m) => m.id === "aod_play_area");
+
+    // Find the tracklist module (aod_tracks) for track data
+    const tracklistModule = modules.find((m) => m.id === "aod_tracks");
+
+    if (!playerModule || !tracklistModule) {
+      report("Unable to find player or tracklist module");
+      return;
+    }
+
+    const showInfo = playerModule.data?.[0];
+
+    if (!showInfo) {
+      report("Unable to find show info in player module");
+      return;
+    }
+
     const spotifyTrackUrls = [];
     const spotifyTrackUris = [];
-    showData.tracklist.tracks.forEach((elem) => {
-      const uris = elem.uris.filter(
+
+    tracklistModule.data.forEach((elem) => {
+      const uris = elem.uris?.filter(
         (uri) => uri.id === "commercial-music-service-spotify",
       )[0];
       if (uris && uris.uri && !uris.uri.includes("album")) {
@@ -64,6 +102,7 @@ const extractTracklistInfo = (showMetadataMap) => {
         spotifyTrackUris.push("spotify:track:" + uris.uri.split("/").pop());
       }
     });
+
     const dj = showInfo.container.title;
     const showNameDate = `${dj} ${showInfo.release.date.split("T")[0]}`;
     results[showInfo.urn.split(":").pop()] = {
