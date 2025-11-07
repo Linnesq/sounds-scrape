@@ -1,7 +1,6 @@
 const scraper = require("./scraper");
 
-const fetch = require("node-fetch");
-jest.mock("node-fetch");
+global.fetch = jest.fn();
 
 const { getShowsConfig } = require("../config/config");
 jest.mock("../config/config");
@@ -46,14 +45,14 @@ describe("scraper", () => {
 
   describe("extractEpisodeUrls", () => {
     test("returns array of URLs", async () => {
-      fetch.mockResolvedValue({ text: async () => htmlString });
+      global.fetch.mockResolvedValue({ text: async () => htmlString });
       const actual = await scraper.extractEpisodeUrls();
       expect(actual.length).toBe(1);
       expect(actual[0]).toContain("https://www.bbc.co.uk/sounds/play/testing");
     });
 
     test("returns empty array when no URLs found", async () => {
-      fetch.mockResolvedValue({ text: async () => `<div></div>` });
+      global.fetch.mockResolvedValue({ text: async () => `<div></div>` });
       const actual = await scraper.extractEpisodeUrls();
       expect(actual.length).toBe(0);
     });
@@ -62,7 +61,7 @@ describe("scraper", () => {
   describe("extractEpisodeMetadata", () => {
     test("can extract valid state", async () => {
       const url = "fake-url";
-      fetch.mockResolvedValue({ text: async () => htmlStateString });
+      global.fetch.mockResolvedValue({ text: async () => htmlStateString });
       const actual = await scraper.extractEpisodeMetadata([url]);
 
       expect(actual[url].programmes.current.container.title).toEqual(
@@ -73,7 +72,7 @@ describe("scraper", () => {
 
     test("skips when there is no show data", async () => {
       const url = "fake";
-      fetch.mockResolvedValue({ text: async () => "" });
+      global.fetch.mockResolvedValue({ text: async () => "" });
 
       const actual = await scraper.extractEpisodeMetadata([url]);
 
@@ -125,21 +124,21 @@ describe("scraper", () => {
   describe("getTracklists()", () => {
     test("produces an object of show data", async () => {
       getShowsConfig.mockReturnValue(["link1", "link2"]);
-      fetch.mockResolvedValueOnce({ text: async () => htmlString });
-      fetch.mockResolvedValueOnce({ text: async () => htmlString });
-      fetch.mockResolvedValueOnce({ text: async () => htmlStateString });
-      fetch.mockResolvedValueOnce({ text: async () => htmlStateString });
+      global.fetch.mockResolvedValueOnce({ text: async () => htmlString });
+      global.fetch.mockResolvedValueOnce({ text: async () => htmlString });
+      global.fetch.mockResolvedValueOnce({ text: async () => htmlStateString });
+      global.fetch.mockResolvedValueOnce({ text: async () => htmlStateString });
 
       const result = await scraper.getTracklists();
 
-      expect(fetch).toHaveBeenCalledTimes(4);
-      expect(fetch).toHaveBeenNthCalledWith(1, "link1");
-      expect(fetch).toHaveBeenNthCalledWith(2, "link2");
-      expect(fetch).toHaveBeenNthCalledWith(
+      expect(global.fetch).toHaveBeenCalledTimes(4);
+      expect(global.fetch).toHaveBeenNthCalledWith(1, "link1");
+      expect(global.fetch).toHaveBeenNthCalledWith(2, "link2");
+      expect(global.fetch).toHaveBeenNthCalledWith(
         3,
         "https://www.bbc.co.uk/sounds/play/testing",
       );
-      expect(fetch).toHaveBeenNthCalledWith(
+      expect(global.fetch).toHaveBeenNthCalledWith(
         4,
         "https://www.bbc.co.uk/sounds/play/testing",
       );
