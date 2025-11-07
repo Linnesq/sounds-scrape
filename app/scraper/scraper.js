@@ -27,7 +27,9 @@ const extractEpisodeMetadata = async (urls) => {
     const htmlText = await raw.text();
 
     // Use regex to extract the JSON content from inside the script tag
-    const match = htmlText.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+    const match = htmlText.match(
+      /<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s,
+    );
 
     if (!match || !match[1]) {
       report(`No show data for ${url}`);
