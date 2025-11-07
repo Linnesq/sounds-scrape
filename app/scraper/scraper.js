@@ -69,10 +69,10 @@ const extractTracklistInfo = (showMetadataMap) => {
     }
 
     // Find the player module (aod_play_area) for show info
-    const playerModule = modules.find(m => m.id === "aod_play_area");
+    const playerModule = modules.find((m) => m.id === "aod_play_area");
 
     // Find the tracklist module (aod_tracks) for track data
-    const tracklistModule = modules.find(m => m.id === "aod_tracks");
+    const tracklistModule = modules.find((m) => m.id === "aod_tracks");
 
     if (!playerModule || !tracklistModule) {
       report("Unable to find player or tracklist module");

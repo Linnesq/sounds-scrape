@@ -64,9 +64,10 @@ describe("scraper", () => {
       global.fetch.mockResolvedValue({ text: async () => htmlStateString });
       const actual = await scraper.extractEpisodeMetadata([url]);
 
-      expect(actual[url].props.pageProps.dehydratedState.queries[1].state.data.data[0].data[0].container.title).toEqual(
-        "someShow",
-      );
+      expect(
+        actual[url].props.pageProps.dehydratedState.queries[1].state.data
+          .data[0].data[0].container.title,
+      ).toEqual("someShow");
       expect(Object.keys(actual).length).toEqual(1);
     });
 
