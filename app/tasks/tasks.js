@@ -21,7 +21,7 @@ const createSpotifyPlaylists = async () => {
       const playlistTrackCount = matchingPlaylist["trackCount"];
       if (actualTrackCount > playlistTrackCount) {
         report(
-          `⚠️ Saved playlist ${showNameDate} has ${playlistTrackCount} tracks, latest BBC data has ${actualTrackCount}`,
+          `⚠️ Playlist "${showNameDate}" has ${playlistTrackCount} tracks, latest BBC data has ${actualTrackCount} - updating...`,
         );
         const playlistId = matchingPlaylist["id"];
         let oldTracks = [];
@@ -45,9 +45,9 @@ const createSpotifyPlaylists = async () => {
           .addTracksToPlaylist(playlistId, show.info.spotifyUris)
           .catch((err) => console.error(err));
 
-        report(`👍🏼 ${showNameDate} updated with missing tracks`);
+        report(`✓ "${showNameDate}" updated with missing tracks`);
       } else {
-        report(`${showNameDate} playlist already exists! Skipping...`);
+        report(`✓ Playlist "${showNameDate}" already exists with ${playlistTrackCount} tracks - skipping`);
       }
       continue;
     }
@@ -56,7 +56,7 @@ const createSpotifyPlaylists = async () => {
       continue;
     }
 
-    report(`Creating playlist for ${showNameDate}`);
+    report(`Creating playlist: "${showNameDate}" (${spotifyUris.length} tracks)`);
 
     await webApi()
       .createPlaylist(showNameDate, {
@@ -68,7 +68,7 @@ const createSpotifyPlaylists = async () => {
         webApi().addTracksToPlaylist(data.body.id, show.info.spotifyUris),
       )
       .then((data) =>
-        report(`Tracks successfully added to playlist ${showNameDate}`),
+        report(`✓ Tracks successfully added to playlist "${showNameDate}"`),
       )
       .catch((err) => report(`Error encoutered ${err}`));
   }
