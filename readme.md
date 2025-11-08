@@ -12,7 +12,7 @@ Then the show data is uploaded to spotify (if the show playlist doesn't already 
 
 I made this because I really like Benji B's show, but they only keep up the last 5 episodes, so I can keep show tracklists for posterity and also get great songs into my spotify liked list ♥.
 
-### How to run (Docker)
+### How to run (Docker, with code checked out)
 
 make an `auth.json` file in the project root, e.g.
 
@@ -29,31 +29,41 @@ And change the config file to a show of your liking (this hasn't been tested yet
 Build the image:
 
 ```
-docker build -t benji .
+make build
 ```
 
 and then run the following command:
 
 ```
-docker run -t benji npx run-func ./app/spotify/auth.js printAuthorizeUrl
+make auth-url
 ```
 
 copy the URL output in terminal and open in your browser. It will redirect you to a non-existant page on localhost (or whatever you configure as your callback URL) - that doesn't matter. Extract the `code` from the URL in the address bar. Then, no longer than a few minutes after your command above, run:
 
 ```
-docker run -v $(pwd):/app -t benji npx run-func ./app/spotify/auth.js initialiseAuthorisation <code-from-last-command>
+AUTH_CODE=your_code make authenticate
 ```
 
-**Note**: in these commands you'll see `-v $(pwd):/app` which mounts the current folder to the docker container. When the app is running in docker, and it alters the `auth.json` file, having the mount means the changes to the files are reflected on your file system (rather than just changing only in the docker container).
-
-You should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate. Check everything is working OK by running:
+The `./auth.json` is mounted so you should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate. Check everything is working OK by running:
 
 ```
-docker run -v $(pwd):/app -t benji npx run-func ./app/spotify/auth.js init
+make check-auth
+```
+
+And you should see something like this if all is set up
+
+```
+make check-auth 
+docker run --rm -v ./auth.json:/app/auth.json --name soundscrape-container soundscrape npm run check-auth
+
+> benji-scraper@1.0.0 check-auth
+> npx run-func ./app/spotify/auth.js init
+
+2025-11-08T14:40:46.454Z - init success
 ```
 
 To run the application and create playlists for real, run:
 
 ```
-docker run -v $(pwd):/app -t benji npm run tasks
+make playlists
 ```
