@@ -119,17 +119,20 @@ const extractTracklistInfo = (showMetadataMap) => {
 
 const handleDuplicateShows = (tracklistInfo) => {
   // Group shows by showNameDate with their IDs and track counts
-  const showGroups = Object.entries(tracklistInfo).reduce((groups, [showId, data]) => {
-    const showName = data.info.showNameDate;
-    if (!groups[showName]) {
-      groups[showName] = [];
-    }
-    groups[showName].push({
-      showId,
-      trackCount: data.info.spotifyUris.length,
-    });
-    return groups;
-  }, {});
+  const showGroups = Object.entries(tracklistInfo).reduce(
+    (groups, [showId, data]) => {
+      const showName = data.info.showNameDate;
+      if (!groups[showName]) {
+        groups[showName] = [];
+      }
+      groups[showName].push({
+        showId,
+        trackCount: data.info.spotifyUris.length,
+      });
+      return groups;
+    },
+    {},
+  );
 
   // Find duplicates and determine which to delete (keep the one with more tracks)
   const showsToDelete = Object.entries(showGroups)
