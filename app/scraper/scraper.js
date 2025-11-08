@@ -103,7 +103,7 @@ const extractTracklistInfo = (showMetadataMap) => {
       }
     });
 
-    const dj = showInfo.container.title;
+    const dj = showInfo.container.title.trim();
     const showNameDate = `${dj} ${showInfo.release.date.split("T")[0]}`;
     results[showInfo.urn.split(":").pop()] = {
       info: {
