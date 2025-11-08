@@ -2,7 +2,6 @@ const fs = require("fs");
 const { report } = require("../utils/logger");
 
 const { getShowsConfig } = require("../config/config");
-const { url } = require("inspector");
 
 const extractEpisodeUrls = async (showMainUrl) => {
   const raw = await fetch(showMainUrl);
@@ -160,10 +159,9 @@ const getTracklists = async () => {
   let showUrls = [];
 
   for (const config of getShowsConfig()) {
-    await extractEpisodeUrls(config).then((urls) => {
-      uniq = Array.from(new Set(urls));
-      showUrls.push(...uniq);
-    });
+    const urls = await extractEpisodeUrls(config);
+    const uniq = Array.from(new Set(urls));
+    showUrls.push(...uniq);
   }
 
   const showMetadata = await extractEpisodeMetadata(showUrls);

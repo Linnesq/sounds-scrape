@@ -34,16 +34,20 @@ const createSpotifyPlaylists = async () => {
               })),
           )
           .catch((err) => {
-            console.error(err);
+            report(`Error fetching playlist: ${err.message}`);
           });
 
         await webApi()
           .removeTracksFromPlaylist(playlistId, oldTracks)
-          .catch((err) => console.error(err));
+          .catch((err) => {
+            report(`Error removing tracks from playlist: ${err.message}`);
+          });
 
         await webApi()
           .addTracksToPlaylist(playlistId, show.info.spotifyUris)
-          .catch((err) => console.error(err));
+          .catch((err) => {
+            report(`Error adding tracks to playlist: ${err.message}`);
+          });
 
         report(`✓ "${showNameDate}" updated with missing tracks`);
       } else {
@@ -74,7 +78,9 @@ const createSpotifyPlaylists = async () => {
       .then((data) =>
         report(`✓ Tracks successfully added to playlist "${showNameDate}"`),
       )
-      .catch((err) => report(`Error encoutered ${err}`));
+      .catch((err) => {
+        report(`Error encountered creating playlist: ${err.message}`);
+      });
   }
 };
 
