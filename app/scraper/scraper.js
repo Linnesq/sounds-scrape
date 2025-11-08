@@ -118,36 +118,38 @@ const extractTracklistInfo = (showMetadataMap) => {
 };
 
 const handleDuplicateShows = (tracklistInfo) => {
-  const showsByShowName = {};
-  for (const showId in tracklistInfo) {
-    const showInfo = tracklistInfo[showId].info;
-    const showName = showInfo.showNameDate;
-    const showData = { showId, trackCount: showInfo.spotifyUris.length };
+  // Group shows by showNameDate with their IDs and track counts
+  const showGroups = Object.entries(tracklistInfo).reduce((groups, [showId, data]) => {
+    const showName = data.info.showNameDate;
+    if (!groups[showName]) {
+      groups[showName] = [];
+    }
+    groups[showName].push({
+      showId,
+      trackCount: data.info.spotifyUris.length,
+    });
+    return groups;
+  }, {});
 
-    if (showsByShowName[showName]) {
-      showsByShowName[showName].push(showData);
-    } else {
-      showsByShowName[showName] = [showData];
-    }
+  // Find duplicates and determine which to delete (keep the one with more tracks)
+  const showsToDelete = Object.entries(showGroups)
+    .filter(([_, shows]) => shows.length > 1)
+    .flatMap(([showName, shows]) => {
+      if (shows.length > 2) {
+        report(`${showName} has multiple duplicates!!!`);
+        throw new Error("Cannot choose which duplicate to use.");
+      }
+      // Sort by track count (ascending) and return the one with fewer tracks
+      shows.sort((a, b) => a.trackCount - b.trackCount);
+      return shows[0].showId;
+    });
+
+  // Report and delete duplicates
+  if (showsToDelete.length > 0) {
+    report(`Duplicates detected and handled, affecting ${showsToDelete}`);
+    showsToDelete.forEach((id) => delete tracklistInfo[id]);
   }
 
-  const showsIdsToDelete = [];
-  for (const showName in showsByShowName) {
-    if (showsByShowName[showName].length > 1) {
-      showsByShowName[showName].sort((a, b) => a.trackCount - b.trackCount);
-      showsIdsToDelete.push(showsByShowName[showName][0].showId);
-    }
-    if (showsByShowName[showName].length > 2) {
-      report(`${showName} has multiple duplicates!!!`);
-      throw new Error("Can not choose which duplicate to use.");
-    }
-  }
-  if (showsIdsToDelete.length > 0) {
-    report(`Duplicates detected and handled, affecting ${showsIdsToDelete}`);
-  }
-  showsIdsToDelete.forEach((id) => {
-    delete tracklistInfo[id];
-  });
   return tracklistInfo;
 };
 
