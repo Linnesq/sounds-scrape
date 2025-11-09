@@ -145,4 +145,185 @@ describe("createSpotifyPlaylists", () => {
       "song2",
     ]);
   });
+
+  it("skips shows with no tracks", async () => {
+    getTracklists.mockResolvedValue({
+      showId1: {
+        info: {
+          showNameDate: "Empty Show",
+          spotifyUris: [],
+        },
+      },
+    });
+
+    auth.webApi.mockReturnValue(mockApi);
+
+    getPlaylists.mockReturnValue({
+      existingPlaylistNames: [],
+      playlistData: {},
+    });
+
+    mockApi.createPlaylist = jest.fn();
+    mockApi.addTracksToPlaylist = jest.fn();
+
+    // Act
+    await createSpotifyPlaylists();
+
+    // Expectations
+    expect(mockApi.createPlaylist).not.toHaveBeenCalled();
+    expect(mockApi.addTracksToPlaylist).not.toHaveBeenCalled();
+    expect(report).toHaveBeenCalledWith(
+      "There were no tracks for Empty Show, skipping...",
+    );
+  });
+
+  it("handles errors when creating playlist", async () => {
+    getTracklists.mockResolvedValue(mockTracklisting);
+
+    auth.webApi.mockReturnValue(mockApi);
+
+    getPlaylists.mockReturnValue({
+      existingPlaylistNames: [],
+      playlistData: {},
+    });
+
+    mockApi.createPlaylist = jest
+      .fn()
+      .mockRejectedValue(new Error("API Error"));
+
+    // Act
+    await createSpotifyPlaylists();
+
+    // Expectations
+    expect(report).toHaveBeenCalledWith(
+      "Error encountered creating playlist: API Error",
+    );
+  });
+
+  it("handles errors when fetching playlist for update", async () => {
+    getTracklists.mockResolvedValue({
+      show1: {
+        info: {
+          showNameDate: "Show",
+          spotifyUris: ["a", "b"],
+        },
+      },
+    });
+
+    auth.webApi.mockReturnValue(mockApi);
+
+    getPlaylists.mockReturnValue({
+      existingPlaylistNames: ["Show"],
+      playlistData: {
+        Show: {
+          trackCount: 1,
+          id: "pl1",
+        },
+      },
+    });
+
+    mockApi.getPlaylist = jest
+      .fn()
+      .mockRejectedValue(new Error("Fetch failed"));
+    mockApi.removeTracksFromPlaylist = jest.fn().mockResolvedValue({});
+    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
+
+    // Act
+    await createSpotifyPlaylists();
+
+    // Expectations
+    expect(report).toHaveBeenCalledWith(
+      "Error fetching playlist: Fetch failed",
+    );
+    // When getPlaylist fails, the oldTracks array stays empty, so remove is called with []
+    expect(mockApi.removeTracksFromPlaylist).toHaveBeenCalledWith("pl1", []);
+  });
+
+  it("handles errors when removing tracks from playlist", async () => {
+    getTracklists.mockResolvedValue({
+      show1: {
+        info: {
+          showNameDate: "Show",
+          spotifyUris: ["a", "b"],
+        },
+      },
+    });
+
+    auth.webApi.mockReturnValue(mockApi);
+
+    getPlaylists.mockReturnValue({
+      existingPlaylistNames: ["Show"],
+      playlistData: {
+        Show: {
+          trackCount: 1,
+          id: "pl1",
+        },
+      },
+    });
+
+    mockApi.getPlaylist = jest.fn().mockResolvedValue({
+      body: {
+        tracks: {
+          items: [{ track: { uri: "uri1" } }],
+        },
+      },
+    });
+    mockApi.removeTracksFromPlaylist = jest
+      .fn()
+      .mockRejectedValue(new Error("Remove failed"));
+    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
+
+    // Act
+    await createSpotifyPlaylists();
+
+    // Expectations
+    expect(report).toHaveBeenCalledWith(
+      "Error removing tracks from playlist: Remove failed",
+    );
+    // After remove fails, add should still be called
+    expect(mockApi.addTracksToPlaylist).toHaveBeenCalledWith("pl1", ["a", "b"]);
+  });
+
+  it("handles errors when adding tracks to playlist during update", async () => {
+    getTracklists.mockResolvedValue({
+      show1: {
+        info: {
+          showNameDate: "Show",
+          spotifyUris: ["a", "b"],
+        },
+      },
+    });
+
+    auth.webApi.mockReturnValue(mockApi);
+
+    getPlaylists.mockReturnValue({
+      existingPlaylistNames: ["Show"],
+      playlistData: {
+        Show: {
+          trackCount: 1,
+          id: "pl1",
+        },
+      },
+    });
+
+    mockApi.getPlaylist = jest.fn().mockResolvedValue({
+      body: {
+        tracks: {
+          items: [{ track: { uri: "uri1" } }],
+        },
+      },
+    });
+    mockApi.removeTracksFromPlaylist = jest.fn().mockResolvedValue({});
+    mockApi.addTracksToPlaylist = jest
+      .fn()
+      .mockRejectedValue(new Error("Add failed"));
+
+    // Act
+    await createSpotifyPlaylists();
+
+    // Expectations
+    expect(report).toHaveBeenCalledWith(
+      "Error adding tracks to playlist: Add failed",
+    );
+  });
 });

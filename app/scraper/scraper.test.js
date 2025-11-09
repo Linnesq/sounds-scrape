@@ -80,6 +80,19 @@ describe("scraper", () => {
       expect(actual).toEqual({});
       expect(report).toHaveBeenCalled();
     });
+
+    test("handles malformed JSON gracefully", async () => {
+      const url = "fake-url";
+      const badJson = '<script id="__NEXT_DATA__">{ invalid json }</script>';
+      global.fetch.mockResolvedValue({ text: async () => badJson });
+
+      const actual = await scraper.extractEpisodeMetadata([url]);
+
+      expect(actual).toEqual({});
+      expect(report).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to parse JSON"),
+      );
+    });
   });
 
   describe("extractTracklistInfo", () => {
@@ -95,6 +108,94 @@ describe("scraper", () => {
         "slowthai joins Benji for the full 2 hours.",
       );
       expect(actual.m000s9h5.info.spotifyUris.length).toEqual(22);
+    });
+
+    test("handles missing queries data", () => {
+      const invalidData = { url: { props: {} } };
+      const result = scraper.extractTracklistInfo(invalidData);
+      expect(result).toEqual({});
+      expect(report).toHaveBeenCalledWith(
+        "Unable to find queries data in Next.js structure",
+      );
+    });
+
+    test("handles missing modules data", () => {
+      const invalidData = {
+        url: {
+          props: {
+            pageProps: {
+              dehydratedState: {
+                queries: [{}, { state: { data: { data: [] } } }],
+              },
+            },
+          },
+        },
+      };
+      const result = scraper.extractTracklistInfo(invalidData);
+      expect(result).toEqual({});
+      expect(report).toHaveBeenCalledWith("Unable to find modules data");
+    });
+
+    test("handles missing player or tracklist module", () => {
+      const invalidData = {
+        url: {
+          props: {
+            pageProps: {
+              dehydratedState: {
+                queries: [
+                  {},
+                  {
+                    state: {
+                      data: {
+                        data: [
+                          { id: "wrong_module", data: [] },
+                          { id: "another_wrong_module", data: [] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      const result = scraper.extractTracklistInfo(invalidData);
+      expect(result).toEqual({});
+      expect(report).toHaveBeenCalledWith(
+        "Unable to find player or tracklist module",
+      );
+    });
+
+    test("handles missing show info in player module", () => {
+      const invalidData = {
+        url: {
+          props: {
+            pageProps: {
+              dehydratedState: {
+                queries: [
+                  {},
+                  {
+                    state: {
+                      data: {
+                        data: [
+                          { id: "aod_play_area", data: [] },
+                          { id: "aod_tracks", data: [] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      const result = scraper.extractTracklistInfo(invalidData);
+      expect(result).toEqual({});
+      expect(report).toHaveBeenCalledWith(
+        "Unable to find show info in player module",
+      );
     });
   });
 
@@ -119,6 +220,36 @@ describe("scraper", () => {
       const actual = scraper.handleDuplicateShows(testdata);
 
       expect(Object.keys(actual)).toEqual(["dupe2"]);
+    });
+
+    test("throws error when more than 2 duplicates exist", () => {
+      const testData = {
+        dupe1: {
+          info: {
+            showNameDate: "Show 2023-01-01",
+            spotifyUris: ["a"],
+          },
+        },
+        dupe2: {
+          info: {
+            showNameDate: "Show 2023-01-01",
+            spotifyUris: ["a", "b"],
+          },
+        },
+        dupe3: {
+          info: {
+            showNameDate: "Show 2023-01-01",
+            spotifyUris: ["a", "b", "c"],
+          },
+        },
+      };
+
+      expect(() => scraper.handleDuplicateShows(testData)).toThrow(
+        "Cannot choose which duplicate to use",
+      );
+      expect(report).toHaveBeenCalledWith(
+        expect.stringContaining("multiple duplicates"),
+      );
     });
   });
 

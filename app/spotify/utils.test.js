@@ -43,5 +43,57 @@ describe("Spotify Utils", () => {
         },
       });
     });
+
+    it("fetches all playlists when there are more than 50", async () => {
+      const first50 = Array(50)
+        .fill()
+        .map((_, i) => ({
+          name: `pl${i}`,
+          tracks: { total: 1 },
+          id: `id${i}`,
+        }));
+      const next30 = Array(30)
+        .fill()
+        .map((_, i) => ({
+          name: `pl${i + 50}`,
+          tracks: { total: 1 },
+          id: `id${i + 50}`,
+        }));
+
+      auth.webApi.mockReturnValue(mockApi);
+      mockApi.getUserPlaylists = jest
+        .fn()
+        .mockResolvedValueOnce({ body: { items: first50, total: 80 } })
+        .mockResolvedValueOnce({ body: { items: next30, total: 80 } });
+
+      const result = await getPlaylists();
+
+      expect(mockApi.getUserPlaylists).toHaveBeenCalledTimes(2);
+      expect(mockApi.getUserPlaylists).toHaveBeenNthCalledWith(1, {
+        limit: 50,
+        offset: 0,
+      });
+      expect(mockApi.getUserPlaylists).toHaveBeenNthCalledWith(2, {
+        limit: 50,
+        offset: 50,
+      });
+      expect(result.existingPlaylistNames).toHaveLength(80);
+    });
+
+    it("handles errors when fetching playlists", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+
+      auth.webApi.mockReturnValue(mockApi);
+      mockApi.getUserPlaylists = jest
+        .fn()
+        .mockRejectedValue(new Error("Fetch failed"));
+
+      const result = await getPlaylists();
+
+      expect(consoleSpy).toHaveBeenCalledWith(new Error("Fetch failed"));
+      expect(result.existingPlaylistNames).toEqual([]);
+
+      consoleSpy.mockRestore();
+    });
   });
 });
