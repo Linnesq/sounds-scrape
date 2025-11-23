@@ -62,7 +62,9 @@ const extractTracklistInfo = (showMetadataMap) => {
       const queriesInfo = !queries
         ? "queries is undefined/null"
         : `queries.length = ${queries.length}`;
-      report(`Unable to find queries data in Next.js structure for ${url} (${queriesInfo})`);
+      report(
+        `Unable to find queries data in Next.js structure for ${url} (${queriesInfo})`,
+      );
       return;
     }
 
