@@ -54,12 +54,15 @@ const extractEpisodeMetadata = async (urls) => {
 
 const extractTracklistInfo = (showMetadataMap) => {
   const results = {};
-  Object.values(showMetadataMap).forEach((showData) => {
+  Object.entries(showMetadataMap).forEach(([url, showData]) => {
     // Navigate to the queries array in the new Next.js data structure
     const queries = showData?.props?.pageProps?.dehydratedState?.queries;
 
     if (!queries || queries.length < 2) {
-      report("Unable to find queries data in Next.js structure");
+      const queriesInfo = !queries
+        ? "queries is undefined/null"
+        : `queries.length = ${queries.length}`;
+      report(`Unable to find queries data in Next.js structure for ${url} (${queriesInfo})`);
       return;
     }
 
