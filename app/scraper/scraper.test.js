@@ -115,7 +115,7 @@ describe("scraper", () => {
       const result = scraper.extractTracklistInfo(invalidData);
       expect(result).toEqual({});
       expect(report).toHaveBeenCalledWith(
-        "Unable to find queries data in Next.js structure",
+        "Unable to find queries data in Next.js structure for url (queries is undefined/null)",
       );
     });
 
