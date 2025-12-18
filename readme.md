@@ -20,7 +20,7 @@ make an `auth.json` file in the project root, e.g.
 {
     "clientId": "from-your-spotify-app",
     "clientSecret": "from-your-spotify-app",
-    "redirectUri": "https://localhost/callback"
+    "redirectUri": "http://127.0.0.1:80/callback"
 }
 ```
 
@@ -67,3 +67,12 @@ To run the application and create playlists for real, run:
 ```
 make playlists
 ```
+
+### Spotify App Settings
+
+There is a guide on creating an app [here](https://developer.spotify.com/documentation/web-api/tutorials/getting-started), but the general settings I use are:
+
+1. I made an app on https://developer.spotify.com/dashboard
+2. for "App Status" I just use `Developer Mode`
+3. for "Redirect URIs" I just use `http://127.0.0.1:80/callback`
+4. Once you have your client ID, client Secret and valid redirect URI, you can follow the guide above.
