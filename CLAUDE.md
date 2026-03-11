@@ -6,32 +6,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A BBC Sounds scraper that extracts show tracklists and creates Spotify playlists. It scrapes episode pages, parses `__NEXT_DATA__` JSON from `<script>` tags, extracts Spotify track URIs, and creates/updates playlists via the Spotify Web API.
 
+## Development Environment
+
+**Always use Docker for all commands** — do not run npm/node directly on the host. Use Makefile targets or `docker run --rm soundscrape <command>` for ad-hoc commands (e.g. `docker run --rm soundscrape npm outdated`). Run `make build` after changing code before running tests.
+
 ## Commands
 
 ```bash
+# Build the Docker image (required first)
+make build
+
 # Run tests
-npm test
+make tests
 
 # Run tests in watch mode
-npm run test:watch
+make tests-interactive
 
-# Run a single test file
-npx jest app/scraper/scraper.test.js
-
-# Check code formatting
-npm run lint:check
-
-# Fix code formatting
-npm run lint:fix
+# Run test coverage (80% function threshold)
+make coverage
 
 # Run the app (scrape + create playlists)
-npm run tasks
+make playlists
 
-# Test coverage (80% function threshold)
-npm run coverage
+# Auth setup
+make auth-url
+AUTH_CODE=your_code make authenticate
+make check-auth
 ```
 
-Docker workflow uses `make` targets: `make build`, `make tests`, `make playlists`, `make auth-url`, `AUTH_CODE=xxx make authenticate`, `make check-auth`.
+To run a single test file or other ad-hoc commands, use `make shell` to get an interactive shell inside the container.
 
 ## Architecture
 
