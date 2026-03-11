@@ -4,11 +4,9 @@ POC Scraper for BBC Sounds. Pulls out show tracklists and creates spotify playli
 
 ### How does it work?
 
-Uses XPath to extract show URLS from the page in config. Then we pull those pages and extract a JSON object from a `<script>` tag on those pages which, with a bit of string manipulation, can be parsed into a JSON object rich in show data. It's from this that we can extract tracklists.
+Uses regex to extract episode URLs from the show pages in config. Then we pull those episode pages and extract the `__NEXT_DATA__` JSON from a `<script>` tag, which contains rich show data including tracklists with Spotify links.
 
-That data is stored in a file called latest.json so you can run `index.js` using that rather than re-scraping. Be a nice citizen and also try not to get yourself bot-blocked (I assume BBC employs some bot-blocking).
-
-Then the show data is uploaded to spotify (if the show playlist doesn't already exist).
+Then the tracklist data is uploaded to Spotify - creating new playlists or updating existing ones if they have fewer tracks than the latest BBC data.
 
 I made this because I really like Benji B's show, but they only keep up the last 5 episodes, so I can keep show tracklists for posterity and also get great songs into my spotify liked list ♥.
 
