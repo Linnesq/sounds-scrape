@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      # Batch minor/patch bumps into one PR; majors still get their own PR
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      # Move to a new Node major deliberately (and update .nvmrc with it)
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
