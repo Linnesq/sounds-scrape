@@ -7,6 +7,8 @@ jest.mock("../utils/logger");
 const { createClient } = require("./client");
 jest.mock("./client");
 
+// Keep the real fetch to call login's local callback server
+const realFetch = global.fetch;
 global.fetch = jest.fn();
 
 const underTest = require("./auth");
@@ -28,13 +30,18 @@ const savedConfig = () => {
   return JSON.parse(contents);
 };
 
-const tokenRequest = () => {
-  const [url, options] = fetch.mock.calls[0];
+const tokenRequest = (callIndex = 0) => {
+  const [url, options] = fetch.mock.calls[callIndex];
   return {
     url,
     headers: options.headers,
     params: Object.fromEntries(options.body),
   };
+};
+
+const mockCurrentUser = (user) => {
+  const getCurrentUser = jest.fn().mockResolvedValue(user);
+  createClient.mockReturnValue({ getCurrentUser });
 };
 
 describe("auth.js", () => {
@@ -104,22 +111,17 @@ describe("auth.js", () => {
     });
   });
 
-  describe("init", () => {
+  describe("checkAuth", () => {
     it("refreshes the token and confirms it works by fetching the user", async () => {
       fetch.mockResolvedValueOnce(
         jsonResponse(200, { access_token: "new-access" }),
       );
-      const getCurrentUser = jest
-        .fn()
-        .mockResolvedValue({ id: "user1", display_name: "Someone" });
-      createClient.mockReturnValue({ getCurrentUser });
+      mockCurrentUser({ id: "user1", display_name: "Someone" });
 
-      await underTest.init();
+      await underTest.checkAuth();
 
       expect(createClient).toHaveBeenCalledWith("new-access");
-      expect(report).toHaveBeenCalledWith(
-        "init success - authenticated as Someone",
-      );
+      expect(report).toHaveBeenCalledWith("Auth OK - authenticated as Someone");
     });
 
     it("fails if the token can't be refreshed", async () => {
@@ -127,8 +129,131 @@ describe("auth.js", () => {
         jsonResponse(401, { error: "invalid_client" }),
       );
 
-      await expect(underTest.init()).rejects.toThrow("invalid_client");
+      await expect(underTest.checkAuth()).rejects.toThrow("invalid_client");
       expect(createClient).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("login", () => {
+    const redirectUri = "http://127.0.0.1:38765/callback";
+    let log;
+
+    beforeEach(() => {
+      fs.readFileSync.mockReturnValue(
+        JSON.stringify({ ...storedConfig, redirectUri }),
+      );
+      log = jest.spyOn(console, "log").mockImplementation(() => {});
+      delete process.env.AUTH_PORT;
+    });
+
+    afterEach(() => log.mockRestore());
+
+    // Starts a login and waits until it has printed the authorise URL
+    const startLogin = async (options) => {
+      const loggedIn = underTest.login(options);
+      loggedIn.catch(() => {}); // asserted on by each test
+      while (log.mock.calls.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      const authoriseUrl = new URL(log.mock.calls[0][0].trim());
+      return { loggedIn, authoriseUrl };
+    };
+
+    const redirectBack = (query) => realFetch(`${redirectUri}?${query}`);
+
+    it("captures the code from Spotify's redirect, saves the tokens and checks them", async () => {
+      fetch
+        .mockResolvedValueOnce(
+          jsonResponse(200, { access_token: "a-token", refresh_token: "r" }),
+        )
+        .mockResolvedValueOnce(jsonResponse(200, { access_token: "fresh" }));
+      mockCurrentUser({ id: "user1", display_name: "Someone" });
+
+      const { loggedIn, authoriseUrl } = await startLogin();
+      const state = authoriseUrl.searchParams.get("state");
+      const page = await redirectBack(`code=the-code&state=${state}`);
+
+      expect(page.status).toBe(200);
+      expect(await page.text()).toContain("You can close this tab");
+      await loggedIn;
+
+      expect(state).toMatch(/^[0-9a-f]{32}$/);
+      expect(authoriseUrl.searchParams.get("redirect_uri")).toBe(redirectUri);
+      expect(tokenRequest(0).params).toEqual({
+        grant_type: "authorization_code",
+        code: "the-code",
+        redirect_uri: redirectUri,
+      });
+      expect(savedConfig()).toMatchObject({
+        accessToken: "a-token",
+        refreshToken: "r",
+      });
+      expect(report).toHaveBeenCalledWith(
+        "Login complete - authenticated as Someone",
+      );
+    });
+
+    it("ignores requests for other paths and keeps waiting", async () => {
+      fetch.mockResolvedValue(jsonResponse(200, { access_token: "t" }));
+      mockCurrentUser({ id: "user1" });
+
+      const { loggedIn, authoriseUrl } = await startLogin();
+      const favicon = await realFetch("http://127.0.0.1:38765/favicon.ico");
+      expect(favicon.status).toBe(404);
+
+      const state = authoriseUrl.searchParams.get("state");
+      await redirectBack(`code=the-code&state=${state}`);
+      await expect(loggedIn).resolves.toBeUndefined();
+    });
+
+    it("rejects a redirect whose state doesn't match", async () => {
+      const { loggedIn } = await startLogin();
+
+      const page = await redirectBack("code=the-code&state=someone-elses");
+
+      expect(page.status).toBe(400);
+      await expect(loggedIn).rejects.toThrow("didn't match this login attempt");
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("fails when the user declines access", async () => {
+      const { loggedIn, authoriseUrl } = await startLogin();
+      const state = authoriseUrl.searchParams.get("state");
+
+      await redirectBack(`error=access_denied&state=${state}`);
+
+      await expect(loggedIn).rejects.toThrow(
+        "Spotify authorisation failed: access_denied",
+      );
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("gives up if Spotify never redirects back", async () => {
+      const { loggedIn } = await startLogin({ timeoutMs: 50 });
+
+      await expect(loggedIn).rejects.toThrow("Timed out");
+    });
+
+    it("needs a local redirect URI", async () => {
+      fs.readFileSync.mockReturnValue(
+        JSON.stringify({
+          ...storedConfig,
+          redirectUri: "https://example.com/callback",
+        }),
+      );
+
+      await expect(underTest.login()).rejects.toThrow(
+        "make login needs a local redirectUri",
+      );
+    });
+
+    it("explains a mismatch between the redirect URI port and the published port", async () => {
+      process.env.AUTH_PORT = "8080";
+
+      await expect(underTest.login()).rejects.toThrow(
+        "run AUTH_PORT=38765 make login",
+      );
+      delete process.env.AUTH_PORT;
     });
   });
 
@@ -194,7 +319,7 @@ describe("auth.js", () => {
         redirect_uri: "http://127.0.0.1:80/callback",
         scope:
           "playlist-modify-private playlist-read-private user-library-read user-library-modify",
-        state: "should-appear-on-callback-url",
+        state: expect.stringMatching(/^[0-9a-f]{32}$/),
       });
       expect(url.search).toContain("scope=playlist-modify-private%20");
       log.mockRestore();

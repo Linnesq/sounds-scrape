@@ -7,12 +7,13 @@
     "coverage": "jest --coverage --silent",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "tasks": "rm *.log; node app/index.js",
+    "tasks": "rm -f *.log; node app/index.js",
     "lint:check": "prettier --check app/**/*.js",
     "lint:fix": "prettier --write app/**/*.js",
-    "print-auth-url": "npx run-func ./app/spotify/auth.js printAuthorizeUrl",
-    "setup-auth": "npx run-func ./app/spotify/auth.js initialiseAuthorisation $AUTH_CODE",
-    "check-auth": "npx run-func ./app/spotify/auth.js init"
+    "login": "node app/cli.js login",
+    "print-auth-url": "node app/cli.js auth-url",
+    "setup-auth": "node app/cli.js authenticate $AUTH_CODE",
+    "check-auth": "node app/cli.js check-auth"
   },
   "author": "",
   "license": "ISC",
