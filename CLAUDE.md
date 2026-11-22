@@ -42,8 +42,10 @@ To run a single test file or other ad-hoc commands, use `make shell` to get an i
 
 **Pipeline (app/tasks/tasks.js):**
 1. **Scrape** (`app/scraper/scraper.js`): For each show URL in config, fetch the episodes listing page, extract episode URLs via regex, then fetch each episode page and parse `__NEXT_DATA__` JSON to get tracklists with Spotify URIs. Deduplicates episodes that appear multiple times (keeps the one with more tracks). Writes results to `latest.json`.
-2. **Auth** (`app/spotify/auth.js`): Initialize Spotify Web API client, auto-refresh tokens if expired. Credentials stored in `auth.json` (root-level, git-ignored).
-3. **Playlists** (`app/spotify/utils.js` + `tasks.js`): Fetch all user playlists (paginated), then for each scraped show: skip if playlist exists with same track count, update if playlist exists with fewer tracks, or create new playlist.
+2. **Auth** (`app/spotify/auth.js`): Refreshes the access token at the start of every run and saves it (plus any new refresh token) back to `auth.json` (root-level, git-ignored). Also holds the one-off OAuth setup used by the `auth-url`/`authenticate` Makefile targets.
+3. **Playlists** (`app/spotify/client.js` + `tasks.js`): `client.js` is a small `fetch`-based Spotify Web API client (no SDK dependency) that retries rate limits (and server errors on idempotent requests) and throws on any other error. Fetch all user playlists (paginated), then for each scraped show: skip if playlist exists with same or more tracks, replace its tracks if it has fewer, or create a new playlist.
+
+**Failure handling:** The run exits non-zero if no episodes are parsed, if Spotify auth or the playlist listing fails (nothing is created, so playlists can't be duplicated), or if any show fails to sync (other shows are still processed first).
 
 **Config** (`app/config/config.js`): Array of BBC Sounds show URLs to scrape.
 

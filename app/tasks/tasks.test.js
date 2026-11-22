@@ -1,329 +1,138 @@
 const { createSpotifyPlaylists } = require("./tasks");
 
-const auth = require("../spotify/auth");
+const { refreshAccessToken } = require("../spotify/auth");
 jest.mock("../spotify/auth");
-const mockApi = require("spotify-web-api-node");
-jest.mock("spotify-web-api-node");
+
+const { createClient } = require("../spotify/client");
+jest.mock("../spotify/client");
 
 const { getTracklists } = require("../scraper/scraper");
 jest.mock("../scraper/scraper");
 
 const { report } = require("../utils/logger");
 jest.mock("../utils/logger");
-report.mockImplementation = (text) => {}; // no-op};
 
-const { getPlaylists } = require("../spotify/utils");
-jest.mock("../spotify/utils");
-
-const mockTracklisting = {
-  m0010hfn: {
-    info: {
-      dj: "Benji B",
-      showNameDate: "mockShowName",
-      description: "Benji explores future beats from around the world.",
-      spotifyUris: ["spotify:track:7uafPT7Gvs4rVCHRfym5sI"],
-    },
+const show = (showNameDate, spotifyUris) => ({
+  info: {
+    showNameDate,
+    description: `${showNameDate} description`,
+    spotifyUris,
   },
-};
+});
 
 describe("createSpotifyPlaylists", () => {
+  let spotify;
+
   beforeEach(() => {
     jest.resetAllMocks();
+    refreshAccessToken.mockResolvedValue("access-token");
+    spotify = {
+      getAllPlaylists: jest.fn().mockResolvedValue([]),
+      createPlaylist: jest.fn().mockResolvedValue({ id: "new-id" }),
+      setPlaylistItems: jest.fn().mockResolvedValue(),
+    };
+    createClient.mockReturnValue(spotify);
   });
 
-  it("creates playlist when no pre-existing playlist found", async () => {
-    getTracklists.mockResolvedValue(mockTracklisting);
+  it("creates a playlist and adds its tracks when none exists", async () => {
+    getTracklists.mockResolvedValue({ ep1: show("Show A", ["uri1", "uri2"]) });
 
-    auth.webApi.mockReturnValue(mockApi);
-    mockApi.getUserPlaylists = jest.fn();
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["My Playlist 1"],
-      playlistData: {
-        "My Playlist 1": {
-          trackCount: 1,
-          id: "mpl1",
-        },
-      },
-    });
-
-    mockApi.createPlaylist = jest
-      .fn()
-      .mockResolvedValue({ body: { id: "an ID" } });
-
-    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
-
-    // Act
     await createSpotifyPlaylists();
 
-    // Expectations
-    expect(auth.init).toHaveBeenCalledTimes(1);
-    expect(getPlaylists).toHaveBeenCalledTimes(1);
-    expect(mockApi.createPlaylist.mock.calls[0][0]).toEqual("mockShowName");
-    expect(mockApi.createPlaylist).toHaveBeenCalledTimes(1);
-    expect(mockApi.addTracksToPlaylist).toHaveBeenCalledTimes(1);
-    expect(mockApi.addTracksToPlaylist.mock.calls[0]).toEqual([
-      "an ID",
-      ["spotify:track:7uafPT7Gvs4rVCHRfym5sI"],
+    expect(createClient).toHaveBeenCalledWith("access-token");
+    expect(spotify.createPlaylist).toHaveBeenCalledWith(
+      "Show A",
+      "Show A description",
+    );
+    expect(spotify.setPlaylistItems).toHaveBeenCalledWith("new-id", [
+      "uri1",
+      "uri2",
     ]);
   });
 
-  it("will not create playlist when pre-existing playlist found", async () => {
-    getTracklists.mockResolvedValue(mockTracklisting);
+  it("skips a show whose playlist already has as many tracks", async () => {
+    getTracklists.mockResolvedValue({ ep1: show("Show A", ["uri1"]) });
+    spotify.getAllPlaylists.mockResolvedValue([
+      { id: "pl1", name: "Show A", trackCount: 1 },
+    ]);
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["mockShowName"],
-      playlistData: {
-        mockShowName: {
-          trackCount: 1,
-          id: "msn1",
-        },
-      },
-    });
-
-    mockApi.createPlaylist = jest.fn();
-
-    mockApi.addTracksToPlaylist = jest.fn();
-
-    // Act
     await createSpotifyPlaylists();
-    // Expectations
-    expect(auth.init).toHaveBeenCalledTimes(1);
-    expect(getPlaylists).toHaveBeenCalledTimes(1);
-    expect(mockApi.createPlaylist).not.toHaveBeenCalled();
-    expect(mockApi.addTracksToPlaylist).not.toHaveBeenCalled();
+
+    expect(spotify.createPlaylist).not.toHaveBeenCalled();
+    expect(spotify.setPlaylistItems).not.toHaveBeenCalled();
+    expect(report).toHaveBeenCalledWith(
+      '✓ Playlist "Show A" already exists with 1 tracks - skipping',
+    );
   });
 
-  it("updates a playlist when scrape returns more tracks", async () => {
-    getTracklists.mockResolvedValue({
-      showId1: {
-        info: {
-          showNameDate: "show1",
-          spotifyUris: ["song1", "song2"],
-        },
-      },
-    });
-
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["show1"],
-      playlistData: {
-        show1: {
-          trackCount: 1,
-          id: "msn1",
-        },
-      },
-    });
-
-    mockApi.createPlaylist = jest.fn();
-    mockApi.getPlaylist = jest.fn().mockResolvedValue({
-      body: {
-        tracks: {
-          items: [{ track: { uri: "uri1" } }],
-        },
-      },
-    });
-    mockApi.removeTracksFromPlaylist = jest.fn().mockResolvedValue({});
-
-    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
-
-    // Act
-    await createSpotifyPlaylists();
-    // Expectations
-    expect(auth.init).toHaveBeenCalledTimes(1);
-    expect(getPlaylists).toHaveBeenCalledTimes(1);
-    expect(mockApi.getPlaylist).toHaveBeenCalledWith("msn1");
-    expect(mockApi.removeTracksFromPlaylist).toHaveBeenCalledWith("msn1", [
-      { uri: "uri1" },
+  it("replaces the tracks when BBC now lists more than the playlist has", async () => {
+    getTracklists.mockResolvedValue({ ep1: show("Show A", ["uri1", "uri2"]) });
+    spotify.getAllPlaylists.mockResolvedValue([
+      { id: "pl1", name: "Show A", trackCount: 1 },
     ]);
-    expect(mockApi.createPlaylist).not.toHaveBeenCalled();
-    expect(mockApi.addTracksToPlaylist).toHaveBeenCalledWith("msn1", [
-      "song1",
-      "song2",
+
+    await createSpotifyPlaylists();
+
+    expect(spotify.createPlaylist).not.toHaveBeenCalled();
+    expect(spotify.setPlaylistItems).toHaveBeenCalledWith("pl1", [
+      "uri1",
+      "uri2",
     ]);
   });
 
   it("skips shows with no tracks", async () => {
-    getTracklists.mockResolvedValue({
-      showId1: {
-        info: {
-          showNameDate: "Empty Show",
-          spotifyUris: [],
-        },
-      },
-    });
+    getTracklists.mockResolvedValue({ ep1: show("Empty Show", []) });
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: [],
-      playlistData: {},
-    });
-
-    mockApi.createPlaylist = jest.fn();
-    mockApi.addTracksToPlaylist = jest.fn();
-
-    // Act
     await createSpotifyPlaylists();
 
-    // Expectations
-    expect(mockApi.createPlaylist).not.toHaveBeenCalled();
-    expect(mockApi.addTracksToPlaylist).not.toHaveBeenCalled();
+    expect(spotify.createPlaylist).not.toHaveBeenCalled();
     expect(report).toHaveBeenCalledWith(
       "There were no tracks for Empty Show, skipping...",
     );
   });
 
-  it("handles errors when creating playlist", async () => {
-    getTracklists.mockResolvedValue(mockTracklisting);
+  it("fails before touching Spotify when no episodes were parsed", async () => {
+    getTracklists.mockResolvedValue({});
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: [],
-      playlistData: {},
-    });
-
-    mockApi.createPlaylist = jest
-      .fn()
-      .mockRejectedValue(new Error("API Error"));
-
-    // Act
-    await createSpotifyPlaylists();
-
-    // Expectations
-    expect(report).toHaveBeenCalledWith(
-      "Error encountered creating playlist: API Error",
+    await expect(createSpotifyPlaylists()).rejects.toThrow(
+      "No episodes were parsed from BBC Sounds",
     );
+    expect(refreshAccessToken).not.toHaveBeenCalled();
   });
 
-  it("handles errors when fetching playlist for update", async () => {
-    getTracklists.mockResolvedValue({
-      show1: {
-        info: {
-          showNameDate: "Show",
-          spotifyUris: ["a", "b"],
-        },
-      },
-    });
+  it("fails without creating anything when Spotify auth fails", async () => {
+    getTracklists.mockResolvedValue({ ep1: show("Show A", ["uri1"]) });
+    refreshAccessToken.mockRejectedValue(new Error("token refresh failed"));
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["Show"],
-      playlistData: {
-        Show: {
-          trackCount: 1,
-          id: "pl1",
-        },
-      },
-    });
-
-    mockApi.getPlaylist = jest
-      .fn()
-      .mockRejectedValue(new Error("Fetch failed"));
-    mockApi.removeTracksFromPlaylist = jest.fn().mockResolvedValue({});
-    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
-
-    // Act
-    await createSpotifyPlaylists();
-
-    // Expectations
-    expect(report).toHaveBeenCalledWith(
-      "Error fetching playlist: Fetch failed",
+    await expect(createSpotifyPlaylists()).rejects.toThrow(
+      "token refresh failed",
     );
-    // When getPlaylist fails, the oldTracks array stays empty, so remove is called with []
-    expect(mockApi.removeTracksFromPlaylist).toHaveBeenCalledWith("pl1", []);
+    expect(spotify.createPlaylist).not.toHaveBeenCalled();
   });
 
-  it("handles errors when removing tracks from playlist", async () => {
-    getTracklists.mockResolvedValue({
-      show1: {
-        info: {
-          showNameDate: "Show",
-          spotifyUris: ["a", "b"],
-        },
-      },
-    });
+  it("fails without creating anything when the playlist list can't be fetched", async () => {
+    getTracklists.mockResolvedValue({ ep1: show("Show A", ["uri1"]) });
+    spotify.getAllPlaylists.mockRejectedValue(new Error("503"));
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["Show"],
-      playlistData: {
-        Show: {
-          trackCount: 1,
-          id: "pl1",
-        },
-      },
-    });
-
-    mockApi.getPlaylist = jest.fn().mockResolvedValue({
-      body: {
-        tracks: {
-          items: [{ track: { uri: "uri1" } }],
-        },
-      },
-    });
-    mockApi.removeTracksFromPlaylist = jest
-      .fn()
-      .mockRejectedValue(new Error("Remove failed"));
-    mockApi.addTracksToPlaylist = jest.fn().mockResolvedValue({});
-
-    // Act
-    await createSpotifyPlaylists();
-
-    // Expectations
-    expect(report).toHaveBeenCalledWith(
-      "Error removing tracks from playlist: Remove failed",
-    );
-    // After remove fails, add should still be called
-    expect(mockApi.addTracksToPlaylist).toHaveBeenCalledWith("pl1", ["a", "b"]);
+    await expect(createSpotifyPlaylists()).rejects.toThrow("503");
+    expect(spotify.createPlaylist).not.toHaveBeenCalled();
+    expect(spotify.setPlaylistItems).not.toHaveBeenCalled();
   });
 
-  it("handles errors when adding tracks to playlist during update", async () => {
+  it("carries on past a failing show, then fails the run naming it", async () => {
     getTracklists.mockResolvedValue({
-      show1: {
-        info: {
-          showNameDate: "Show",
-          spotifyUris: ["a", "b"],
-        },
-      },
+      ep1: show("Show A", ["uri1"]),
+      ep2: show("Show B", ["uri2"]),
     });
+    spotify.createPlaylist
+      .mockRejectedValueOnce(new Error("API Error"))
+      .mockResolvedValueOnce({ id: "id-b" });
 
-    auth.webApi.mockReturnValue(mockApi);
-
-    getPlaylists.mockReturnValue({
-      existingPlaylistNames: ["Show"],
-      playlistData: {
-        Show: {
-          trackCount: 1,
-          id: "pl1",
-        },
-      },
-    });
-
-    mockApi.getPlaylist = jest.fn().mockResolvedValue({
-      body: {
-        tracks: {
-          items: [{ track: { uri: "uri1" } }],
-        },
-      },
-    });
-    mockApi.removeTracksFromPlaylist = jest.fn().mockResolvedValue({});
-    mockApi.addTracksToPlaylist = jest
-      .fn()
-      .mockRejectedValue(new Error("Add failed"));
-
-    // Act
-    await createSpotifyPlaylists();
-
-    // Expectations
-    expect(report).toHaveBeenCalledWith(
-      "Error adding tracks to playlist: Add failed",
+    await expect(createSpotifyPlaylists()).rejects.toThrow(
+      "1 playlist(s) failed to sync: Show A",
     );
+    expect(report).toHaveBeenCalledWith('✗ Failed to sync "Show A": API Error');
+    expect(spotify.setPlaylistItems).toHaveBeenCalledTimes(1);
+    expect(spotify.setPlaylistItems).toHaveBeenCalledWith("id-b", ["uri2"]);
   });
 });

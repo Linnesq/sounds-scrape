@@ -16,9 +16,6 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "spotify-web-api-node": "^5.0.2"
-  },
   "devDependencies": {
     "jest": "^30.5.2",
     "prettier": "^3.10.1"
