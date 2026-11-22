@@ -9,8 +9,12 @@ const extractEpisodeUrls = async (showMainUrl) => {
   const matches =
     html.match(/(https:\/\/www\.bbc\.co\.uk\/programmes\/.\w*)/g) || [];
 
-  const urls = matches.map((node) => node.replace("programmes", "sounds/play"));
-  return urls;
+  // The listing page also links to the show's own page, which isn't an episode
+  const isShowPage = (url) => showMainUrl?.startsWith(`${url}/`);
+
+  return matches
+    .filter((url) => !isShowPage(url))
+    .map((url) => url.replace("programmes", "sounds/play"));
 };
 
 /*

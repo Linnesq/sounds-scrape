@@ -30,34 +30,32 @@ Build the image:
 make build
 ```
 
-and then run the following command:
+Then log in to Spotify:
 
 ```
-make auth-url
+make login
 ```
 
-copy the URL output in terminal and open in your browser. It will redirect you to a non-existant page on localhost (or whatever you configure as your callback URL) - that doesn't matter. Extract the `code` from the URL in the address bar. Then, no longer than a few minutes after your command above, run:
+This prints a Spotify URL. Open it in your browser and approve access. Spotify then redirects your browser back to your `redirectUri`, where `make login` is listening. It saves your tokens to `auth.json` (which is mounted into the container) and confirms which account you logged in as:
 
 ```
-AUTH_CODE=your_code make authenticate
+2026-11-22T13:30:00.000Z - Login complete - authenticated as <your Spotify name>
 ```
 
-The `./auth.json` is mounted so you should now have everything (5 things) you need in `auth.json`. The App will use this to authenticate. Check everything is working OK by running:
+If your `redirectUri` uses a port other than 80, run `AUTH_PORT=<port> make login`.
+
+**No browser on this machine (e.g. a server)?** Either run `make login` on a machine that has one and copy `auth.json` across, or do it by hand: run `make auth-url`, open the URL in any browser, and after Spotify redirects you, copy the `code` parameter from the address bar (the page itself won't load). Within a few minutes, run `AUTH_CODE=your_code make authenticate`.
+
+You can check your credentials at any time with:
 
 ```
 make check-auth
 ```
 
-And you should see something like this if all is set up
+which should end with something like:
 
 ```
-make check-auth 
-docker run --rm -v ./auth.json:/app/auth.json --name soundscrape-container soundscrape npm run check-auth
-
-> benji-scraper@1.0.0 check-auth
-> npx run-func ./app/spotify/auth.js init
-
-2026-11-22T10:30:46.454Z - init success - authenticated as <your Spotify name>
+2026-11-22T13:31:00.000Z - Auth OK - authenticated as <your Spotify name>
 ```
 
 To run the application and create playlists for real, run:

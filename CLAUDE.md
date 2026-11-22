@@ -28,10 +28,13 @@ make coverage
 # Run the app (scrape + create playlists)
 make playlists
 
-# Auth setup
+# Auth setup: listens on the redirectUri port (AUTH_PORT=<port> if not 80) for Spotify's callback
+make login
+make check-auth
+
+# Manual auth fallback (no browser on this machine)
 make auth-url
 AUTH_CODE=your_code make authenticate
-make check-auth
 ```
 
 To run a single test file or other ad-hoc commands, use `make shell` to get an interactive shell inside the container.
@@ -42,10 +45,12 @@ To run a single test file or other ad-hoc commands, use `make shell` to get an i
 
 **Pipeline (app/tasks/tasks.js):**
 1. **Scrape** (`app/scraper/scraper.js`): For each show URL in config, fetch the episodes listing page, extract episode URLs via regex, then fetch each episode page and parse `__NEXT_DATA__` JSON to get tracklists with Spotify URIs. Deduplicates episodes that appear multiple times (keeps the one with more tracks). Writes results to `latest.json`.
-2. **Auth** (`app/spotify/auth.js`): Refreshes the access token at the start of every run and saves it (plus any new refresh token) back to `auth.json` (root-level, git-ignored). Also holds the one-off OAuth setup used by the `auth-url`/`authenticate` Makefile targets.
+2. **Auth** (`app/spotify/auth.js`): Refreshes the access token at the start of every run and saves it (plus any new refresh token) back to `auth.json` (root-level, git-ignored). Also holds the one-off OAuth setup: `login` runs a temporary local server on the redirect URI to catch Spotify's callback (state-checked), and `printAuthorizeUrl`/`initialiseAuthorisation` are the manual fallback.
 3. **Playlists** (`app/spotify/client.js` + `tasks.js`): `client.js` is a small `fetch`-based Spotify Web API client (no SDK dependency) that retries rate limits (and server errors on idempotent requests) and throws on any other error. Fetch all user playlists (paginated), then for each scraped show: skip if playlist exists with same or more tracks, replace its tracks if it has fewer, or create a new playlist.
 
 **Failure handling:** The run exits non-zero if no episodes are parsed, if Spotify auth or the playlist listing fails (nothing is created, so playlists can't be duplicated), or if any show fails to sync (other shows are still processed first).
+
+**Auth CLI** (`app/cli.js`): `login`, `check-auth`, `auth-url` and `authenticate` subcommands, called by the npm scripts behind the Makefile auth targets. Failures print one line and exit 1.
 
 **Config** (`app/config/config.js`): Array of BBC Sounds show URLs to scrape.
 

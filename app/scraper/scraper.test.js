@@ -51,6 +51,18 @@ describe("scraper", () => {
       expect(actual[0]).toContain("https://www.bbc.co.uk/sounds/play/testing");
     });
 
+    test("leaves out the link to the show's own page", async () => {
+      global.fetch.mockResolvedValue({
+        text: async () => `
+          <a href="https://www.bbc.co.uk/programmes/b00v4tv3">Benji B</a>
+          <a href="https://www.bbc.co.uk/programmes/m00340hg">Episode</a>`,
+      });
+      const actual = await scraper.extractEpisodeUrls(
+        "https://www.bbc.co.uk/programmes/b00v4tv3/episodes/player",
+      );
+      expect(actual).toEqual(["https://www.bbc.co.uk/sounds/play/m00340hg"]);
+    });
+
     test("returns empty array when no URLs found", async () => {
       global.fetch.mockResolvedValue({ text: async () => `<div></div>` });
       const actual = await scraper.extractEpisodeUrls();
