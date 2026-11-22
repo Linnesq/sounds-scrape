@@ -3,7 +3,6 @@ const data = {
     pageProps: {
       dehydratedState: {
         queries: [
-          {},
           {
             state: {
               data: {
