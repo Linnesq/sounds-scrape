@@ -1,2 +1,11 @@
 node_modules/*
 .vscode
+.git
+.claude
+coverage
+
+# Secrets and run artefacts (see .gitignore); auth.json is mounted at runtime
+auth*.json
+saved*
+latest.json
+*.log
