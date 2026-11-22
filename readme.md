@@ -57,7 +57,7 @@ docker run --rm -v ./auth.json:/app/auth.json --name soundscrape-container sound
 > benji-scraper@1.0.0 check-auth
 > npx run-func ./app/spotify/auth.js init
 
-2025-11-08T14:40:46.454Z - init success
+2026-11-22T10:30:46.454Z - init success - authenticated as <your Spotify name>
 ```
 
 To run the application and create playlists for real, run:
