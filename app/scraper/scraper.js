@@ -58,7 +58,7 @@ const extractTracklistInfo = (showMetadataMap) => {
     // Navigate to the queries array in the new Next.js data structure
     const queries = showData?.props?.pageProps?.dehydratedState?.queries;
 
-    if (!queries || queries.length < 2) {
+    if (!queries || queries.length === 0) {
       const queriesInfo = !queries
         ? "queries is undefined/null"
         : `queries.length = ${queries.length}`;
@@ -68,11 +68,17 @@ const extractTracklistInfo = (showMetadataMap) => {
       return;
     }
 
-    // Get the modules data array
-    const modules = queries[1]?.state?.data?.data;
+    // Locate the experience query by its contents rather than its index:
+    // BBC has moved it before (queries[1] -> queries[0]).
+    const modules = queries
+      .map((query) => query?.state?.data?.data)
+      .find(
+        (data) =>
+          Array.isArray(data) && data.some((m) => m?.id === "aod_play_area"),
+      );
 
-    if (!modules || modules.length < 2) {
-      report("Unable to find modules data");
+    if (!modules) {
+      report(`Unable to find modules data for ${url}`);
       return;
     }
 

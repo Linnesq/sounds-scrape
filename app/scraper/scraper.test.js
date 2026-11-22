@@ -110,6 +110,27 @@ describe("scraper", () => {
       expect(actual.m000s9h5.info.spotifyUris.length).toEqual(22);
     });
 
+    test("finds the modules query when it is not the first query", () => {
+      const mockData = require("../../samples/tracks");
+      const [experienceQuery] =
+        mockData.props.pageProps.dehydratedState.queries;
+      const showMap = {
+        "fake-url": {
+          props: {
+            pageProps: {
+              dehydratedState: {
+                queries: [{ state: { data: {} } }, experienceQuery],
+              },
+            },
+          },
+        },
+      };
+
+      const actual = scraper.extractTracklistInfo(showMap);
+
+      expect(actual.m000s9h5.info.spotifyUris.length).toEqual(22);
+    });
+
     test("handles missing queries data", () => {
       const invalidData = { url: { props: {} } };
       const result = scraper.extractTracklistInfo(invalidData);
@@ -133,22 +154,53 @@ describe("scraper", () => {
       };
       const result = scraper.extractTracklistInfo(invalidData);
       expect(result).toEqual({});
-      expect(report).toHaveBeenCalledWith("Unable to find modules data");
+      expect(report).toHaveBeenCalledWith(
+        "Unable to find modules data for url",
+      );
     });
 
-    test("handles missing player or tracklist module", () => {
+    test("handles missing modules query when no query has a player module", () => {
       const invalidData = {
         url: {
           props: {
             pageProps: {
               dehydratedState: {
                 queries: [
-                  {},
                   {
                     state: {
                       data: {
                         data: [
                           { id: "wrong_module", data: [] },
+                          { id: "another_wrong_module", data: [] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      const result = scraper.extractTracklistInfo(invalidData);
+      expect(result).toEqual({});
+      expect(report).toHaveBeenCalledWith(
+        "Unable to find modules data for url",
+      );
+    });
+
+    test("handles missing tracklist module", () => {
+      const invalidData = {
+        url: {
+          props: {
+            pageProps: {
+              dehydratedState: {
+                queries: [
+                  {
+                    state: {
+                      data: {
+                        data: [
+                          { id: "aod_play_area", data: [] },
                           { id: "another_wrong_module", data: [] },
                         ],
                       },
